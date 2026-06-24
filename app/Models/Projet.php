@@ -9,4 +9,21 @@ class Projet extends Model
 {
     /** @use HasFactory<\Database\Factories\ProjetFactory> */
     use HasFactory;
+
+
+    protected $fillable=[
+
+        'name',
+        'description',
+        'user_id'
+    ];
+
+    public function user(){
+
+        return $this->belongsTo(User::class);
+    }
+
+    public function tache(){
+        return $this->hasMany(Tache::class);
+    }
 }

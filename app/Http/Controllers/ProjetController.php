@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProjetRequest;
 use App\Http\Requests\UpdateProjetRequest;
+
 use App\Models\Projet;
 
 class ProjetController extends Controller
@@ -11,9 +12,16 @@ class ProjetController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        //
+    public function index(StoreProjetRequest $request)
+    { 
+            
+        $porjet = Projet::whereHas('user', function ($query) use ($request) {
+            $query->where('user_id', $request->user()->id);
+        })->get();
+ 
+        return response()->json($projets = $porjet->get());
+
+        
     }
 
     /**
