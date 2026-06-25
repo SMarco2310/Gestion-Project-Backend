@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Notifications\WelcomeEmail;
 
 
 class AuthController extends Controller
@@ -26,7 +27,7 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password'])
         ]);
 
-        // $user->notify(new  WelcomeNotfication($user));
+        $user->notify(new WelcomeEmail());
          
 
         $token = $user->createToken('auth_token')-> plainTextToken;
@@ -105,11 +106,11 @@ class AuthController extends Controller
     }
 
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
+    // /**
+    //  * Remove the specified resource from storage.
+    //  */
+    // public function destroy(string $id)
+    // {
+    //     //
+    // }
 }

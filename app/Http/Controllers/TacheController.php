@@ -12,6 +12,8 @@ class TacheController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    // this list all the task that belongs to that belongs to the projects fo the user
     public function index(Request $request)
     {
         $taches = $request->user()->projets()->with('taches')->get();
@@ -38,6 +40,8 @@ class TacheController extends Controller
         if ($tache->projet()->user_id() !== $request->user()->id) {
             abort(403, 'You do not own this task.');
         }
+        $tache->load('commentaires');
+
  
         return response()->json($tache);
   

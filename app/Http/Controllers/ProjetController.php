@@ -12,10 +12,12 @@ class ProjetController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(StoreProjetRequest $request)
+    public function index(Request $request)
     { 
             
-        $projets = $request->user()->projets()->get();
+        $projets = $request->user()->projets()->with('taches')->get();
+
+
 
         return response()->json(['projets'=>$projets,'success'=>true],200);
     }
@@ -26,7 +28,7 @@ class ProjetController extends Controller
      */
     public function store(StoreProjetRequest $request)
     {
-        $projet = Projet::create($request->validated());
+        $projet = $request->user()->projets()->create($request->validated());
 
         return response()->json(['projet'=>$projet,'success'=>true],201);
     }
@@ -37,8 +39,7 @@ class ProjetController extends Controller
      */
     public function show(Request $request,Projet $projet)
     {
-        
- 
+        $projet->load('taches');
         return response()->json($projet,200);
     }
 

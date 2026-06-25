@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProjetController;
 use App\Http\Controllers\TacheController;
+use App\Http\Controllers\CommentairesController;
+use App\Http\Controllers\NotificationsController;
 /**
 * Public endpoits
 */
@@ -28,7 +30,17 @@ Route::middleware('auth:sanctum')->group(function () {
     // this handles all the methods for Projets endpoint
     Route::apiResource('projets',ProjetController::class);
 
+
+
     // this handles all the methods for Taches endpoint
     Route::apiResource('taches',TacheController::class);
+
+
+    // This handles all the methods for Commentaires endpoint
+    Route::get('/notifications'[NotificationsController::class,'index']);
+    Route::put('/notifications'[NotificationsController::class,'update'])
+    Route::apiResource('commentaires',CommentairesController::class);
+
+    // This handles all the methods for Notification
 
 });

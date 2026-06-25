@@ -17,14 +17,6 @@ class CommentairesPolicy
     }
 
     /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Commentaires $commentaires): bool
-    {
-        return false;
-    }
-
-    /**
      * Determine whether the user can create models.
      */
     public function create(User $user): bool
@@ -37,7 +29,8 @@ class CommentairesPolicy
      */
     public function update(User $user, Commentaires $commentaires): bool
     {
-        return true;
+        return $commentaires->user_id() === $user->id();
+
     }
 
     /**
@@ -45,7 +38,7 @@ class CommentairesPolicy
      */
     public function delete(User $user, Commentaires $commentaires): bool
     {
-        return true;
+        return $commentaires->user_id() === $user->id();
     }
 
     /**
@@ -61,6 +54,6 @@ class CommentairesPolicy
      */
     public function forceDelete(User $user, Commentaires $commentaires): bool
     {
-        return true;
+        return $commentaires->user_id() === $user->id();
     }
 }

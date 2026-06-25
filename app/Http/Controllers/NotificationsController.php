@@ -11,17 +11,13 @@ class NotificationsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        //
-    }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    //  the notification we should only see the ones that are linked to the projet of the current user.
+    public function index(Request $request)
     {
-        //
+        $notifications = $request->user()->notifications()->get();
+
+        return response()->json($notifications,200);
     }
 
     /**
@@ -29,38 +25,34 @@ class NotificationsController extends Controller
      */
     public function store(StoreNotificationsRequest $request)
     {
-        //
+        $notification= Notifications::create($request->validated());
+
+        return response()->json($notification,201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Notifications $notifications)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Notifications $notifications)
-    {
-        //
-    }
+    // /**
+    //  * Display the specified resource.
+    //  */
+    // public function show(Notifications $notification)
+    // {
+        
+    // }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateNotificationsRequest $request, Notifications $notifications)
+    public function update(UpdateNotificationsRequest $request, Notifications $notification)
     {
-        //
+        $notification->update($request->validated());
+
+        return response()->json($notification,203);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Notifications $notifications)
-    {
-        //
-    }
+    // /**
+    //  * Remove the specified resource from storage.
+    //  */
+    // public function destroy(Notifications $notifications)
+    // {
+    //     //
+    // }
 }
