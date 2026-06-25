@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use App\Models\User;
 
+
 class AuthController extends Controller
 {
     /**
@@ -24,6 +25,8 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password'])
         ]);
+
+        // $user->notify(new  WelcomeNotfication($user));
          
 
         $token = $user->createToken('auth_token')-> plainTextToken;
@@ -62,17 +65,21 @@ class AuthController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    // public function update(Request $request, User $user)
+    public function update(Request $request, User $user)
 
-    // {
-    //     $validated = $request->validate([
-    //         'password' => 'required|string',
-    //     ])
+    {
+        $validated = $request->validate();
 
-    //     $playload = $request->playload();
-    //     //
-    // }
+        if (isset($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        } 
+        $request->user()->update($validated);
 
+
+        
+        return response()->json($request->user()->fresh());
+
+    }
 
     /**
      * Logout.

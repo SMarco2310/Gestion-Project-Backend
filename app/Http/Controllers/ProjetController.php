@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProjetRequest;
 use App\Http\Requests\UpdateProjetRequest;
-
+use Illuminate\Http\Request;
 use App\Models\Projet;
 
 class ProjetController extends Controller
@@ -15,60 +15,52 @@ class ProjetController extends Controller
     public function index(StoreProjetRequest $request)
     { 
             
-        $porjet = Projet::whereHas('user', function ($query) use ($request) {
-            $query->where('user_id', $request->user()->id);
-        })->get();
- 
-        return response()->json($projets = $porjet->get());
+        $projets = $request->user()->projets()->get();
 
-        
+        return response()->json(['projets'=>$projets,'success'=>true],200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
+   
     /**
      * Store a newly created resource in storage.
      */
     public function store(StoreProjetRequest $request)
     {
-        //
+        $projet = Projet::create($request->validated());
+
+        return response()->json(['projet'=>$projet,'success'=>true],201);
     }
+
 
     /**
      * Display the specified resource.
      */
-    public function show(Projet $projet)
+    public function show(Request $request,Projet $projet)
     {
-        //
+        
+ 
+        return response()->json($projet,200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Projet $projet)
-    {
-        //
-    }
-
+    
     /**
      * Update the specified resource in storage.
      */
     public function update(UpdateProjetRequest $request, Projet $projet)
     {
-        //
+        $projet->update($request->validated());
+
+        return response()->json($projet->fresh());
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Projet $projet)
+    public function destroy(Request $request,Projet $projet)
     {
-        //
+      
+        $projet->delete();
+        return response()->json(null,204);
+            
     }
 }

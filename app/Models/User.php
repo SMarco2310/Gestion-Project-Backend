@@ -30,4 +30,8 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function projets()
+    {
+        return $this->hasMany(Projet::class);
+    }
 }

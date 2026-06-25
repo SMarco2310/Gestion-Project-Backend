@@ -12,7 +12,6 @@ class Projet extends Model
 
 
     protected $fillable=[
-
         'name',
         'description',
         'user_id'
@@ -22,8 +21,12 @@ class Projet extends Model
 
         return $this->belongsTo(User::class);
     }
+    
+    // public function users(){
+    //     return $this->hasMany(User::class)
+    // }
 
-    public function tache(){
+    public function taches(){
         return $this->hasMany(Tache::class);
     }
 }
