@@ -51,7 +51,7 @@ class ProjetController extends Controller
     {
         $projet->update($request->validated());
 
-        return response()->json($projet->fresh());
+        return response()->json($projet->fresh(),200);
     }
 
     /**

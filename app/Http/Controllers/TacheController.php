@@ -13,12 +13,14 @@ class TacheController extends Controller
      * Display a listing of the resource.
      */
 
-    // this list all the task that belongs to that belongs to the projects fo the user
+    // list all tasks that belong to projects owned by the authenticated user
     public function index(Request $request)
     {
-        $taches = $request->user()->projets()->with('taches')->get();
+        $taches = Tache::whereHas('projet', function ($query) use ($request) {
+            $query->where('user_id', $request->user()->id);
+        })->get();
 
-        return response()->json($taches,200)
+        return response()->json($taches, 200);
     }
 
 
@@ -27,24 +29,27 @@ class TacheController extends Controller
      */
     public function store(StoreTacheRequest $request)
     {
-        $tache = Tache::create($request->validated());
+        $validated = $request->validated();
 
-        return response()->json($tache,201);
+        $projet = $request->user()->projets()->findOrFail($validated['projet_id']);
+
+        $tache = $projet->taches()->create($validated);
+
+        return response()->json($tache, 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Tache $tache)
+    public function show(Request $request, Tache $tache)
     {
-        if ($tache->projet()->user_id() !== $request->user()->id) {
+        if ($tache->projet->user_id !== $request->user()->id) {
             abort(403, 'You do not own this task.');
         }
         $tache->load('commentaires');
-
  
-        return response()->json($tache);
-  
+        return response()->json($tache, 200);
+
     }
 
     /**
@@ -52,20 +57,18 @@ class TacheController extends Controller
      */
     public function update(UpdateTacheRequest $request, Tache $tache)
     {
+    
         $tache->update($request->validated());
 
-        return response()->json($tache->fresh())
+        return response()->json(['Tache'=>$tache->fresh()], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request,Tache $tache)
+    public function destroy(Request $request, Tache $tache)
     {
-        if($tache->projet()->user_id() !== $request->user()->id()){
-            abort(403, 'You do not own this task.');
 
-        }
         $tache->delete();
 
         return response()->json(null,204);

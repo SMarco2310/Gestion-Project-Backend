@@ -16,7 +16,7 @@
           <tr>
             <td style="background-color:#1d1d1d; padding:24px 32px;">
               <span style="font-size:18px; font-weight:bold; color:#ffffff; font-family:Arial, Helvetica, sans-serif;">
-                [App Name]
+                {{$app}}
               </span>
             </td>
           </tr>

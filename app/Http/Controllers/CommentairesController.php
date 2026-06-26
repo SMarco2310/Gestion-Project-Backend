@@ -24,7 +24,9 @@ class CommentairesController extends Controller
      */
     public function store(StoreCommentairesRequest $request)
     {
-        $commentaire= Commentaire::create($request->validated());
+        $commentaire= Commentaire::create($request->validated(
+     
+        ));
 
         return response()->json($commentaire,201);
     }
@@ -42,7 +44,13 @@ class CommentairesController extends Controller
      */
     public function update(UpdateCommentairesRequest $request, Commentaires $commentaires)
     {
-        $commentaires->update($request->validated());
+        $commentaires->update($request->validated(
+            // [
+            //     'content' => 'required|string',
+            //     'user_id' => 'required|exists:users,id',
+            //     'tache_id' => 'required|exists:taches,id',
+            // ]
+        ));
 
         return response()->json(['commentaires'=>$commentaires,'success'=>true],200);
     }

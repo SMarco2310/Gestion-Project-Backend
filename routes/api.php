@@ -37,10 +37,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     // This handles all the methods for Commentaires endpoint
-    Route::get('/notifications'[NotificationsController::class,'index']);
-    Route::put('/notifications'[NotificationsController::class,'update'])
+    Route::get('/notifications',[NotificationsController::class,'index']);
+    Route::put('/notifications',[NotificationsController::class,'update']);
+
+    // This handles all the methods for Commantaires endpoints
     Route::apiResource('commentaires',CommentairesController::class);
 
-    // This handles all the methods for Notification
 
 });

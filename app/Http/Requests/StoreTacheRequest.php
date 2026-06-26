@@ -23,7 +23,12 @@ class StoreTacheRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'priority' => ['nullable', 'in:low,medium,high'],
+            'status' => ['nullable', 'in:todo,in_progress,done'],
+            'due_date' => ['required', 'date'],
+            'projet_id' => ['required', 'exists:projets,id'],
         ];
     }
 }

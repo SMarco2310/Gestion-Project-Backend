@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Notifications\WelcomeEmail;
-
+use App\Notifications\WelcomeNotification;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -27,7 +27,7 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password'])
         ]);
 
-        $user->notify(new WelcomeEmail());
+        $user->notify(new WelcomeNotification());
          
 
         $token = $user->createToken('auth_token')-> plainTextToken;
@@ -69,8 +69,12 @@ class AuthController extends Controller
     public function update(Request $request, User $user)
 
     {
-        $validated = $request->validate();
-
+        
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            'password' => 'sometimes|string|min:8',
+        ]);
         if (isset($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         } 

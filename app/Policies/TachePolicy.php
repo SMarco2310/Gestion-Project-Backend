@@ -20,7 +20,7 @@ class TachePolicy
      */
     public function view(User $user, Tache $tache): bool
     {
-        return $tache->projet->user_id === $user->id;
+        return $tache->projet()->user_id() === $user->id();
     }
 
     public function create(User $user): bool
@@ -30,21 +30,21 @@ class TachePolicy
 
     public function update(User $user, Tache $tache): bool
     {
-        return $tache->projet->user_id === $user->id;
+        return $tache->projet()->user_id() === $user->id();
     }
 
     public function delete(User $user, Tache $tache): bool
     {
-        return $tache->projet->user_id === $user->id;
+        return $tache->projet()->user_id() === $user->id();
     }
 
     public function restore(User $user, Tache $tache): bool
     {
-        return $tache->projet->user_id === $user->id;
+        return false;
     }
 
     public function forceDelete(User $user, Tache $tache): bool
     {
-        return $tache->projet->user_id === $user->id;
+        return $tache->projet()->user_id() === $user->id();
     }
 }

@@ -1,5 +1,4 @@
 <?php
-// app/Notifications/WelcomeNotification.php
  
 namespace App\Notifications;
  
@@ -23,10 +22,11 @@ class WelcomeNotification extends Notification
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Bienvenue sur [App Name] !')
+            ->subject('Bienvenue sur !'.env('APP_NAME'))
             ->view('emails.welcome', [
                 'user' => $notifiable,
-                'loginUrl' => url(env('APP_URL')."/login"),
+                'app'=>env('APP_NAME'),
+                'loginUrl' => url(env('APP_URL')."/auth/login"),
             ]);
     }
 }
