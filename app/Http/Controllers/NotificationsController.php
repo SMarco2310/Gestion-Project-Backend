@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreNotificationsRequest;
-use App\Http\Requests\UpdateNotificationsRequest;
-use App\Models\Notifications;
+use Illuminate\Http\Request;
 
 class NotificationsController extends Controller
 {
@@ -12,40 +10,60 @@ class NotificationsController extends Controller
      * Display a listing of the resource.
      */
 
-    //  the notification we should only see the ones that are linked to the projet of the current user.
+    /**
+     * Get all unread notifications for the authenticated user
+     */
     public function index(Request $request)
     {
-        $notifications = $request->user()->notifications()->get();
-
-        return response()->json($notifications,200);
+        $notifications = $request->user()->notifications()->latest()->get();
+        return response()->json($notifications, 200);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Get all notifications with pagination (read and unread)
      */
-    public function store(StoreNotificationsRequest $request)
+    public function all(Request $request)
     {
-        $notification= Notifications::create($request->validated());
-
-        return response()->json($notification,201);
+        $notifications = $request->user()->notifications()->latest()->paginate(15);
+        return response()->json($notifications, 200);
     }
 
-    // /**
-    //  * Display the specified resource.
-    //  */
-    // public function show(Notifications $notification)
-    // {
-        
-    // }
+    /**
+     * Mark a single notification as read
+     */
+    public function markAsRead(Request $request, $id)
+    {
+        $notification = $request->user()->notifications()->findOrFail($id);
+        $notification->markAsRead();
+        return response()->json(['success' => true, 'message' => 'Notification marked as read'], 200);
+    }
 
     /**
-     * Update the specified resource in storage.
+     * Mark all notifications as read
      */
-    public function update(UpdateNotificationsRequest $request, Notifications $notification)
+    public function markAllAsRead(Request $request)
     {
-        $notification->update($request->validated());
+        $request->user()->unreadNotifications->markAsRead();
+        return response()->json(['success' => true, 'message' => 'All notifications marked as read'], 200);
+    }
 
-        return response()->json($notification,203);
+    /**
+     * Delete a notification
+     */
+    public function destroy(Request $request, $id)
+    {
+        $notification = $request->user()->notifications()->findOrFail($id);
+        $notification->delete();
+        return response()->json(['success' => true, 'message' => 'Notification deleted'], 200);
+    }
+
+    /**
+     * Get count of unread notifications
+     */
+    public function unreadCount(Request $request)
+    {
+        $count = $request->user()->unreadNotifications()->count();
+        return response()->json(['unread_count' => $count], 200);
     }
 
     // /**

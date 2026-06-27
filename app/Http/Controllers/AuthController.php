@@ -33,7 +33,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')-> plainTextToken;
 
 
-        return  response()->json(['user' => $user, 'token' => $token], 201);
+        return  response()->json(['user' => $user, 'token' => $token,'message' => 'User created successfully'], 201);
     }
 
     /**
@@ -59,7 +59,7 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json(['user'=>$user, 'token'=>$token, 'message'=> 'User created successfuly'],200);
+        return response()->json(['user'=>$user, 'token'=>$token, 'message'=> 'User logged in successfully'],200);
     }
 
 
@@ -73,6 +73,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            'bio' => 'sometimes|string|max:500',
             'password' => 'sometimes|string|min:8',
         ]);
         if (isset($validated['password'])) {
@@ -82,7 +83,7 @@ class AuthController extends Controller
 
 
         
-        return response()->json($request->user()->fresh());
+        return response()->json(['user' => $request->user()->fresh(), 'message' => 'User updated successfully'], 200);
 
     }
 
@@ -106,7 +107,7 @@ class AuthController extends Controller
     public function profile(Request $request)
     {
         // this just return the current user's informations
-        return response()-> json([$request->user()],200);
+        return response()-> json(['user' => $request->user(), 'message' => 'Profile retrieved successfully'],200);
     }
 
 

@@ -17,8 +17,6 @@ class ProjetController extends Controller
             
         $projets = $request->user()->projets()->with('taches')->get();
 
-
-
         return response()->json(['projets'=>$projets,'success'=>true],200);
     }
 
@@ -28,7 +26,16 @@ class ProjetController extends Controller
      */
     public function store(StoreProjetRequest $request)
     {
-        $projet = $request->user()->projets()->create($request->validated());
+        $projet = $request->user()->projets()->create($request->validate(
+            [
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'reference_code' => 'required|string|max:255',
+                'status' => 'required|in:à faire,en cours,terminé',
+                'start_date' => 'required|date',
+                'end_date' => 'required|date',
+            ]
+        ));
 
         return response()->json(['projet'=>$projet,'success'=>true],201);
     }
@@ -49,7 +56,16 @@ class ProjetController extends Controller
      */
     public function update(UpdateProjetRequest $request, Projet $projet)
     {
-        $projet->update($request->validated());
+        $projet->update($request->validate(
+            [
+                'name' => 'sometimes|required|string|max:255',
+                'description' => 'sometimes|nullable|string',
+                'reference_code' => 'sometimes|required|string|max:255',
+                'status' => 'sometimes|required|in:à faire,en cours,terminé',
+                'start_date' => 'sometimes|required|date',
+                'end_date' => 'sometimes|required|date',
+            ]
+        ));
 
         return response()->json($projet->fresh(),200);
     }

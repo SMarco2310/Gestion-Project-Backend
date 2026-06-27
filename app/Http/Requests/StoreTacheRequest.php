@@ -25,8 +25,9 @@ class StoreTacheRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'priority' => ['nullable', 'in:low,medium,high'],
-            'status' => ['nullable', 'in:todo,in_progress,done'],
+            'priority' => ['nullable', 'in:faible,moyen,élevé'],
+            'status' => ['nullable', 'in:à faire,en cours,terminé'],
+            'tag' => ['nullable', 'in:bug,feature,improvement,documentation,design,testing,deployment'],
             'due_date' => ['required', 'date'],
             'projet_id' => ['required', 'exists:projets,id'],
         ];

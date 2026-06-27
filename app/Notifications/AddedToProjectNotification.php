@@ -25,7 +25,18 @@ class AddedToProjectNotification extends Notification
 
     public function via($notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
+    }
+
+    public function toDatabase($notifiable): array
+    {
+        return [
+            'title' => "Vous avez été ajouté au projet \"{$this->projet->name}\"",
+            'message' => "{$this->inviterName} vous a ajouté au projet \"{$this->projet->name}\".",
+            'type' => 'added_to_project',
+            'projet_id' => $this->projet->id,
+            'inviter_name' => $this->inviterName,
+        ];
     }
 
     public function toMail($notifiable): MailMessage

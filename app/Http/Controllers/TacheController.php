@@ -29,7 +29,20 @@ class TacheController extends Controller
      */
     public function store(StoreTacheRequest $request)
     {
-        $validated = $request->validated();
+        $validated = $request->validate(
+            [
+                'title' => 'required|string|max:255',
+                'reference_code' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'priority' => 'required|in:faible,moyen,élevé',
+                'status' => 'required|in:à faire,en cours,terminé',
+                'tag' => 'nullable|in:bug,feature,improvement,documentation,design,testing,deployment',
+                'due_date' => 'required|date',
+                'projet_id' => 'required|exists:projets,id',
+                'parent_task_id' => 'nullable|exists:taches,id',
+            ]
+        );
+        
 
         $projet = $request->user()->projets()->findOrFail($validated['projet_id']);
 
@@ -41,12 +54,18 @@ class TacheController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Tache $tache)
+    public function show(Request $request, Tache $tach)
     {
+    
+        $tache = Tache::with(['commentaires', 'subTasks'])
+        ->whereHas('projet', fn($q) => $q->where('user_id', $request->user()->id))
+    ->findOrFail($tach->id);
+
+    
         if ($tache->projet->user_id !== $request->user()->id) {
             abort(403, 'You do not own this task.');
         }
-        $tache->load('commentaires');
+        $tache->load(['commentaires', 'subTasks']);
  
         return response()->json($tache, 200);
 
@@ -55,21 +74,37 @@ class TacheController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateTacheRequest $request, Tache $tache)
+    public function update(UpdateTacheRequest $request, Tache $tach)
     {
-    
-        $tache->update($request->validated());
+        if ($tach->projet->user_id !== $request->user()->id) {
+            abort(403, 'You do not own this task.');
+        }
+        $tach->update($request->validate(
+            [
+                'title' => 'sometimes|required|string|max:255',
+                'reference_code' => 'sometimes|required|string|max:255',
+                'description' => 'sometimes|nullable|string',
+                'priority' => 'sometimes|required|in:faible,moyen,élevé',
+                'status' => 'sometimes|required|in:à faire,en cours,terminé',
+                'tag' => 'sometimes|nullable|in:bug,feature,improvement,documentation,design,testing,deployment',
+                'due_date' => 'sometimes|required|date',
+                'parent_task_id' => 'sometimes|nullable|exists:taches,id',
+            ]
+        ));
 
-        return response()->json(['Tache'=>$tache->fresh()], 200);
+        return response()->json(['Tache'=>$tach->fresh()], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request, Tache $tache)
+    public function destroy(Request $request, Tache $tach)
     {
+        if ($tach->projet->user_id !== $request->user()->id) {
+            abort(403, 'You do not own this task.');
+        }
 
-        $tache->delete();
+        $tach->delete();
 
         return response()->json(null,204);
     }

@@ -14,17 +14,24 @@ class CommentairesController extends Controller
     //  */
 
     // // the commentaires that belong to a specific tache
-    // public function index(Request $request)
-    // {
-    //     // $commentaires = $request->user()->projets()->taches()->with('commentaires')->get();
-    // }
+    public function index(Request $request)
+    {
+    $commentaires = $request->user()->commentaires()->get();
+    return response()->json($commentaires, 200);
+    
+    }
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(StoreCommentairesRequest $request)
     {
-        $commentaire= Commentaire::create($request->validated(
+        $commentaire= Commentaire::create($request->validate(
+            [
+                'content' => 'required|string',
+                'user_id' => 'required|exists:users,id',
+                'tache_id' => 'required|exists:taches,id',
+            ]
      
         ));
 
@@ -42,25 +49,25 @@ class CommentairesController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCommentairesRequest $request, Commentaires $commentaires)
+    public function update(UpdateCommentairesRequest $request, Commentaires $commentaire)
     {
-        $commentaires->update($request->validated(
-            // [
-            //     'content' => 'required|string',
-            //     'user_id' => 'required|exists:users,id',
-            //     'tache_id' => 'required|exists:taches,id',
-            // ]
+        $commentaire->update($request->validated(
+            [
+                'content' => 'required|string',
+                'user_id' => 'required|exists:users,id',
+                'tache_id' => 'required|exists:taches,id',
+            ]
         ));
 
-        return response()->json(['commentaires'=>$commentaires,'success'=>true],200);
+        return response()->json(['commentaires'=>$commentaire,'success'=>true],200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Commentaires $commentaires)
+    public function destroy(Commentaires $commentaire)
     {
-        $commentaires->delete();
+        $commentaire->delete();
 
         return response()->json(null,204);
     }

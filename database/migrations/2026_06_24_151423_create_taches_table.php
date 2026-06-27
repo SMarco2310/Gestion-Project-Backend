@@ -15,9 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('title', 255); // required
             $table->text('description')->nullable();
-            $table->enum('priority',['low', 'medium', 'high'])->default('medium');
-            $table->enum('status',['todo', 'in_progress', 'done'])->default('todo');
-            $table->date('due_date');
+            $table->string('reference_code', 255)->nullable();
+            $table->enum('priority',['faible', 'moyen', 'élevé'])->default('moyen');
+            $table->enum('status',['à faire', 'en cours', 'terminé'])->default('à faire');
+            $table->enum('tag',['bug', 'feature', 'improvement', 'documentation', 'design', 'testing', 'deployment'])->nullable();
+            // $table->enum('tag',['bug', 'feature', 'improvement', 'documentation', 'design', 'testing', 'deployment'])->default('feature');
+            $table->date('due_date')->default(now()->addDays(7));
+            $table->foreignId('parent_task_id')->nullable()->constrained('taches')->onDelete('cascade');
             $table->foreignId('projet_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

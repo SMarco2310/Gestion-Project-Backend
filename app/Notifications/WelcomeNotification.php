@@ -10,23 +10,28 @@ class WelcomeNotification extends Notification
 {
     use Queueable;
  
-    // No constructor needed here — unlike TaskDueSoonNotification,
-    // this notification doesn't need any extra data passed in.
-    // $notifiable (the User) already has everything (name, email) it needs.
- 
     public function via($notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
+    }
+
+    public function toDatabase($notifiable): array
+    {
+        return [
+            'title' => 'Welcome to ' . env('APP_NAME'),
+            'message' => 'Welcome ' . $notifiable->name . '! Glad to have you on board.',
+            'type' => 'welcome'
+        ];
     }
  
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Bienvenue sur !'.env('APP_NAME'))
+            ->subject('Bienvenue sur ' . env('APP_NAME'))
             ->view('emails.welcome', [
                 'user' => $notifiable,
-                'app'=>env('APP_NAME'),
-                'loginUrl' => url(env('APP_URL')."/auth/login"),
+                'app' => env('APP_NAME'),
+                'loginUrl' => url(env('APP_URL') . "/auth/login"),
             ]);
     }
 }

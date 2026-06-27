@@ -23,12 +23,12 @@ class UpdateTacheRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'priority' => ['nullable', 'in:low,medium,high'],
-            'status' => ['nullable', 'in:todo,in_progress,done'],
+            'priority' => ['nullable', 'in:faible,moyen,élevé'],
+            'status' => ['nullable', 'in:à faire,en cours,terminé'],
+            'tag' => ['nullable', 'in:bug,feature,improvement,documentation,design,testing,deployment'],
             'due_date' => ['nullable', 'date'],
-            'projet_id' => ['sometimes', 'required', 'exists:projets,id'],
         ];
     }
 }

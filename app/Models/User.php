@@ -10,8 +10,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Notifications\ResetPasswordNotification;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email','bio', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -30,16 +31,27 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Send the password reset notification using our custom branded template.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
     public function projets()
     {
         return $this->hasMany(Projet::class);
     }
     public function commentaires()
-    {
-        return $this->hasMany(Commentaires::class);
-    }
-    public function notifications()
-    {
-        return $this->hasMany(Notifications::class);
-    }
+{
+    return $this->hasManyThrough(
+        Commentaires::class,
+        Tache::class,
+        'projet_id',
+        'tache_id',
+        'id',
+        'id'
+    );
+}
 }

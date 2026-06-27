@@ -14,6 +14,10 @@ class Projet extends Model
     protected $fillable=[
         'name',
         'description',
+        'reference_code',
+        'status',
+        'start_date',
+        'end_date',
         'user_id'
     ];
 

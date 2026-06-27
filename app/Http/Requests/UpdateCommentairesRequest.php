@@ -23,7 +23,9 @@ class UpdateCommentairesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'content' => ['required', 'string'],
+            'user_id' => ['required', 'exists:users,id'],
+            'tache_id' => ['required', 'exists:taches,id'],
         ];
     }
 }
