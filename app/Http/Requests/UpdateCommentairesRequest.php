@@ -24,8 +24,6 @@ class UpdateCommentairesRequest extends FormRequest
     {
         return [
             'content' => ['required', 'string'],
-            'user_id' => ['required', 'exists:users,id'],
-            'tache_id' => ['required', 'exists:taches,id'],
         ];
     }
 }

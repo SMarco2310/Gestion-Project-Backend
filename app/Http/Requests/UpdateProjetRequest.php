@@ -24,7 +24,10 @@ class UpdateProjetRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'status' => ['sometimes', 'in:à faire,en cours,terminé'],
+            'start_date' => ['sometimes', 'nullable', 'date'],
+            'end_date' => ['sometimes', 'nullable', 'date'],
         ];
     }
 }

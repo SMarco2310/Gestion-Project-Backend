@@ -32,6 +32,7 @@ class ProjetController extends Controller
                 'description' => 'nullable|string',
                 'reference_code' => 'required|string|max:255',
                 'status' => 'required|in:à faire,en cours,terminé',
+                'user_id' => 'required|exists:users,id',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date',
             ]
@@ -47,7 +48,7 @@ class ProjetController extends Controller
     public function show(Request $request,Projet $projet)
     {
         $projet->load('taches');
-        return response()->json($projet,200);
+        return response()->json(['projet' => $projet, 'success' => true], 200);
     }
 
     
@@ -56,16 +57,7 @@ class ProjetController extends Controller
      */
     public function update(UpdateProjetRequest $request, Projet $projet)
     {
-        $projet->update($request->validate(
-            [
-                'name' => 'sometimes|required|string|max:255',
-                'description' => 'sometimes|nullable|string',
-                'reference_code' => 'sometimes|required|string|max:255',
-                'status' => 'sometimes|required|in:à faire,en cours,terminé',
-                'start_date' => 'sometimes|required|date',
-                'end_date' => 'sometimes|required|date',
-            ]
-        ));
+        $projet->update($request->validated());
 
         return response()->json($projet->fresh(),200);
     }

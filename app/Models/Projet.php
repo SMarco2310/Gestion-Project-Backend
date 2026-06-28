@@ -21,6 +21,14 @@ class Projet extends Model
         'user_id'
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'datetime',
+            'end_date' => 'datetime',
+        ];
+    }
+
     public function user(){
         return $this->belongsTo(User::class);
     }

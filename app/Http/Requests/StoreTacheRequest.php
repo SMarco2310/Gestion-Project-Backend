@@ -30,6 +30,7 @@ class StoreTacheRequest extends FormRequest
             'tag' => ['nullable', 'in:bug,feature,improvement,documentation,design,testing,deployment'],
             'due_date' => ['required', 'date'],
             'projet_id' => ['required', 'exists:projets,id'],
+            'parent_task_id' => ['nullable', 'exists:taches,id'],
         ];
     }
 }

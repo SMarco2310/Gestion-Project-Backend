@@ -25,6 +25,13 @@ class Tache extends Model
         'parent_task_id'
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'due_date' => 'datetime',
+        ];
+    }
+
     public function projet(): BelongsTo
     {
         return $this->belongsTo(Projet::class);

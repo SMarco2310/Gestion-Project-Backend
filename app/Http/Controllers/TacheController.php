@@ -5,10 +5,38 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTacheRequest;
 use App\Http\Requests\UpdateTacheRequest;
 use App\Models\Tache;
+use App\Models\Projet;
 use Illuminate\Http\Request;
 
 class TacheController extends Controller
 {
+    /**
+     * Automatically sync a project's status based on its tasks.
+     * - No tasks left → 'à faire'
+     * - All tasks 'terminé' → 'terminé'
+     * - Otherwise → 'en cours'
+     */
+    private function syncProjectStatus(Projet $projet): void
+    {
+        $totalTasks = $projet->taches()->count();
+
+        if ($totalTasks === 0) {
+            $projet->update(['status' => 'à faire']);
+            return;
+        }
+
+        $doneTasks = $projet->taches()->where('status', 'terminé')->count();
+
+        if ($doneTasks === $totalTasks) {
+            $projet->update(['status' => 'terminé']);
+        } else {
+            // At least one task exists and not all are done
+            if ($projet->status !== 'en cours') {
+                $projet->update(['status' => 'en cours']);
+            }
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -16,9 +44,15 @@ class TacheController extends Controller
     // list all tasks that belong to projects owned by the authenticated user
     public function index(Request $request)
     {
-        $taches = Tache::whereHas('projet', function ($query) use ($request) {
+        $query = Tache::whereHas('projet', function ($query) use ($request) {
             $query->where('user_id', $request->user()->id);
-        })->get();
+        });
+
+        if ($request->has('projet_id')) {
+            $query->where('projet_id', $request->query('projet_id'));
+        }
+
+        $taches = $query->withCount('commentaires')->get();
 
         return response()->json($taches, 200);
     }
@@ -48,7 +82,10 @@ class TacheController extends Controller
 
         $tache = $projet->taches()->create($validated);
 
-        return response()->json($tache, 201);
+        // Auto-sync project status after creating a task
+        $this->syncProjectStatus($projet);
+
+        return response()->json(['tache' => $tache, 'success' => true], 201);
     }
 
     /**
@@ -67,7 +104,7 @@ class TacheController extends Controller
         }
         $tache->load(['commentaires', 'subTasks']);
  
-        return response()->json($tache, 200);
+        return response()->json(['tache' => $tache, 'success' => true], 200);
 
     }
 
@@ -79,20 +116,12 @@ class TacheController extends Controller
         if ($tach->projet->user_id !== $request->user()->id) {
             abort(403, 'You do not own this task.');
         }
-        $tach->update($request->validate(
-            [
-                'title' => 'sometimes|required|string|max:255',
-                'reference_code' => 'sometimes|required|string|max:255',
-                'description' => 'sometimes|nullable|string',
-                'priority' => 'sometimes|required|in:faible,moyen,élevé',
-                'status' => 'sometimes|required|in:à faire,en cours,terminé',
-                'tag' => 'sometimes|nullable|in:bug,feature,improvement,documentation,design,testing,deployment',
-                'due_date' => 'sometimes|required|date',
-                'parent_task_id' => 'sometimes|nullable|exists:taches,id',
-            ]
-        ));
+        $tach->update($request->validated());
 
-        return response()->json(['Tache'=>$tach->fresh()], 200);
+        // Auto-sync project status after updating a task
+        $this->syncProjectStatus($tach->projet);
+
+        return response()->json(['tache'=>$tach->fresh(), 'success'=>true], 200);
     }
 
     /**
@@ -104,7 +133,11 @@ class TacheController extends Controller
             abort(403, 'You do not own this task.');
         }
 
+        $projet = $tach->projet;
         $tach->delete();
+
+        // Auto-sync project status after deleting a task
+        $this->syncProjectStatus($projet);
 
         return response()->json(null,204);
     }

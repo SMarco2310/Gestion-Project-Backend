@@ -49,7 +49,7 @@ class TaskDueSoonNotification extends Notification
                 'taskTitle' => $this->tache->title,
                 'taskDescription' => $this->tache->description,
                 'priority' => $this->tache->priority,
-                'dueDate' => $this->tache->due_date->format('d/m/Y'),
+                'dueDate' => $this->tache->due_date->format('dd/mm/YYYY'),
                 'taskUrl' => url((env('APP_URL'))."/taches/{$this->tache->id}"),
             ]);
     }

@@ -66,9 +66,9 @@ class AuthController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
-
+    public function update(Request $request)
     {
+        $user = $request->user();
         
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -76,15 +76,14 @@ class AuthController extends Controller
             'bio' => 'sometimes|string|max:500',
             'password' => 'sometimes|string|min:8',
         ]);
+
         if (isset($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         } 
-        $request->user()->update($validated);
-
-
         
-        return response()->json(['user' => $request->user()->fresh(), 'message' => 'User updated successfully'], 200);
-
+        $user->update($validated);
+        
+        return response()->json(['user' => $user->fresh(), 'message' => 'User updated successfully'], 200);
     }
 
     /**
