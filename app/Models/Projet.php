@@ -29,6 +29,33 @@ class Projet extends Model
         ];
     }
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $prefix = 'PRJ-';
+            $paddingLength = 3; 
+
+            // IMPORTANT: Scope the query to THIS specific user
+            $lastRecord = static::where('user_id', $model->user_id)
+                                ->latest('id')
+                                ->first();
+
+            if (! $lastRecord || ! $lastRecord->reference_code) {
+                // It is this user's very first project
+                $model->reference_code = $prefix . str_pad(1, $paddingLength, '0', STR_PAD_LEFT);
+            } else {
+                // Extract the number from this user's last project
+                $lastNumber = (int) substr($lastRecord->reference_code, strlen($prefix));
+                $newNumber = $lastNumber + 1;
+                
+                // Assign the new reference code
+                $model->reference_code = $prefix . str_pad($newNumber, $paddingLength, '0', STR_PAD_LEFT);
+            }
+        });
+    }
+
     public function user(){
         return $this->belongsTo(User::class);
     }

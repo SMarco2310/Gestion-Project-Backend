@@ -12,7 +12,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Notifications\ResetPasswordNotification;
 
-#[Fillable(['name', 'email','bio', 'password'])]
+#[Fillable(['name', 'email','bio', 'password', 'profile_picture'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -43,6 +43,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Projet::class);
     }
+
     public function commentaires()
 {
     return $this->hasManyThrough(

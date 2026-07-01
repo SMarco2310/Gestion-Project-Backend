@@ -39,6 +39,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // this handles all the methods for Taches endpoint
     Route::apiResource('taches',TacheController::class);
+    Route::post('/taches/{tach}/banner', [TacheController::class, 'uploadBanner']);
+    
+    // Upload profile picture
+    Route::post('/users/profile-picture', [AuthController::class, 'uploadProfilePicture']);
 
     // Notification endpoints
     Route::get('/notifications', [NotificationsController::class, 'index']);

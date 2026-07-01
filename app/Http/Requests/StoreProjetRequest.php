@@ -25,7 +25,7 @@ class StoreProjetRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'reference_code' => ['required', 'string', 'max:255'],
+            // 'reference_code' => ['required', 'string', 'max:255'],
             'status' => ['required', 'in:à faire,en cours,terminé'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date'],

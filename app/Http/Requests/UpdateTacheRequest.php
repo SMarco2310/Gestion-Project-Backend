@@ -31,6 +31,7 @@ class UpdateTacheRequest extends FormRequest
             'tag' => ['sometimes', 'nullable', 'in:bug,feature,improvement,documentation,design,testing,deployment'],
             'due_date' => ['sometimes', 'nullable', 'date'],
             'projet_id' => ['sometimes', 'nullable', 'exists:projets,id'],
+            'banner_image' => ['sometimes', 'nullable', 'string'],
         ];
     }
 }

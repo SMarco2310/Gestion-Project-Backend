@@ -117,11 +117,27 @@ class AuthController extends Controller
     }
 
 
-    // /**
-    //  * Remove the specified resource from storage.
-    //  */
     // public function destroy(string $id)
     // {
     //     //
     // }
+
+    /**
+     * Upload profile picture for the user.
+     */
+    public function uploadProfilePicture(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:5120',
+        ]);
+
+        if ($request->hasFile('profile_picture')) {
+            $path = $request->file('profile_picture')->store('profiles', 'public');
+            $user->update(['profile_picture' => '/storage/' . $path]);
+        }
+
+        return response()->json(['user' => $user->fresh(), 'success' => true], 200);
+    }
 }

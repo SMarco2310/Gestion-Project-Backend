@@ -22,7 +22,8 @@ class Tache extends Model
         'tag',
         'due_date',
         'projet_id',
-        'parent_task_id'
+        'parent_task_id',
+        'banner_image'
     ];
 
     protected function casts(): array
@@ -30,6 +31,36 @@ class Tache extends Model
         return [
             'due_date' => 'datetime',
         ];
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $prefix = 'TSK-';
+            $paddingLength = 3; 
+
+            $projet = $model->projet ?? Projet::find($model->projet_id);
+            
+            if ($projet) {
+                $userId = $projet->user_id;
+
+                $lastRecord = static::whereHas('projet', function($query) use ($userId) {
+                                    $query->where('user_id', $userId);
+                                })
+                                ->latest('id')
+                                ->first();
+
+                if (! $lastRecord || ! $lastRecord->reference_code) {
+                    $model->reference_code = $prefix . str_pad(1, $paddingLength, '0', STR_PAD_LEFT);
+                } else {
+                    $lastNumber = (int) substr($lastRecord->reference_code, strlen($prefix));
+                    $newNumber = $lastNumber + 1;
+                    $model->reference_code = $prefix . str_pad($newNumber, $paddingLength, '0', STR_PAD_LEFT);
+                }
+            }
+        });
     }
 
     public function projet(): BelongsTo

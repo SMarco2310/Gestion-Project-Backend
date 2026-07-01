@@ -66,7 +66,6 @@ class TacheController extends Controller
         $validated = $request->validate(
             [
                 'title' => 'required|string|max:255',
-                'reference_code' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'priority' => 'required|in:faible,moyen,élevé',
                 'status' => 'required|in:à faire,en cours,terminé',
@@ -140,5 +139,26 @@ class TacheController extends Controller
         $this->syncProjectStatus($projet);
 
         return response()->json(null,204);
+    }
+
+    /**
+     * Upload banner image for the task.
+     */
+    public function uploadBanner(Request $request, Tache $tach)
+    {
+        if ($tach->projet->user_id !== $request->user()->id) {
+            abort(403, 'You do not own this task.');
+        }
+
+        $request->validate([
+            'banner_image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:5120',
+        ]);
+
+        if ($request->hasFile('banner_image')) {
+            $path = $request->file('banner_image')->store('banners', 'public');
+            $tach->update(['banner_image' => '/storage/' . $path]);
+        }
+
+        return response()->json(['tache' => $tach->fresh(), 'success' => true], 200);
     }
 }
