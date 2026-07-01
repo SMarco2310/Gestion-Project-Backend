@@ -55,4 +55,11 @@ class User extends Authenticatable
         'id'
     );
 }
+
+public function organization()
+{
+    return $this->belongsTo(Organization::class);
+}
+
+
 }

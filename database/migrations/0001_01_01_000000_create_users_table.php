@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('bio')->nullable();
             $table->timestamp('email_verified_at')->nullable();
-            
+            // $table->foreignId('organization_id')->nullable()->cascadeOnDelete();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
