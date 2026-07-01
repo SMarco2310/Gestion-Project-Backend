@@ -18,25 +18,12 @@ class ProjetController extends Controller
         $projets = $request->user()->projets()->with('taches')->get();
 
         return response()->json(['projets'=>$projets,'success'=>true],200);
-    }
-
-   
-    /**
+    }   /**
      * Store a newly created resource in storage.
      */
     public function store(StoreProjetRequest $request)
     {
-        $projet = $request->user()->projets()->create($request->validate(
-            [
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'reference_code' => 'required|string|max:255',
-                'status' => 'required|in:à faire,en cours,terminé',
-                'user_id' => 'required|exists:users,id',
-                'start_date' => 'required|date',
-                'end_date' => 'required|date',
-            ]
-        ));
+        $projet = $request->user()->projets()->create($request->validated());
 
         return response()->json(['projet'=>$projet,'success'=>true],201);
     }
@@ -69,7 +56,7 @@ class ProjetController extends Controller
     {
       
         $projet->delete();
-        return response()->json(null,204);
+        return response()->json(['message' => 'Projet supprimé avec succès','success'=>true],204);
             
     }
 }

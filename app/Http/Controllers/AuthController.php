@@ -75,10 +75,17 @@ class AuthController extends Controller
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'bio' => 'sometimes|string|max:500',
             'password' => 'sometimes|string|min:8',
+            'current_password' => 'required_with:password|string',
         ]);
 
         if (isset($validated['password'])) {
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'current_password' => ['Le mot de passe actuel est incorrect.'],
+                ]);
+            }
             $validated['password'] = Hash::make($validated['password']);
+            unset($validated['current_password']);
         } 
         
         $user->update($validated);
