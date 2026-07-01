@@ -28,7 +28,7 @@ class UpdateTacheRequest extends FormRequest
             'description' => ['sometimes', 'nullable', 'string'],
             'priority' => ['sometimes', 'in:faible,moyen,élevé'],
             'status' => ['sometimes', 'in:à faire,en cours,terminé'],
-            'tag' => ['sometimes', 'nullable', 'in:bug,feature,improvement,documentation,design,testing,deployment'],
+            'tag_id' => ['sometimes', 'nullable', 'exists:tags,id'],
             'due_date' => ['sometimes', 'nullable', 'date'],
             'projet_id' => ['sometimes', 'nullable', 'exists:projets,id'],
             'banner_image' => ['sometimes', 'nullable', 'string'],

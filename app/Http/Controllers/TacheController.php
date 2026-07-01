@@ -52,7 +52,7 @@ class TacheController extends Controller
             $query->where('projet_id', $request->query('projet_id'));
         }
 
-        $taches = $query->withCount('commentaires')->get();
+        $taches = $query->with(['tag'])->withCount('commentaires')->get();
 
         return response()->json($taches, 200);
     }
@@ -93,7 +93,7 @@ class TacheController extends Controller
     public function show(Request $request, Tache $tach)
     {
     
-        $tache = Tache::with(['commentaires', 'subTasks'])
+        $tache = Tache::with(['commentaires', 'subTasks', 'tag'])
         ->whereHas('projet', fn($q) => $q->where('user_id', $request->user()->id))
     ->findOrFail($tach->id);
 
@@ -101,7 +101,7 @@ class TacheController extends Controller
         if ($tache->projet->user_id !== $request->user()->id) {
             abort(403, 'You do not own this task.');
         }
-        $tache->load(['commentaires', 'subTasks']);
+        $tache->load(['commentaires', 'subTasks', 'tag']);
  
         return response()->json(['tache' => $tache, 'success' => true], 200);
 

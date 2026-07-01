@@ -19,7 +19,7 @@ class Tache extends Model
         'description',
         'priority',
         'status',
-        'tag',
+        'tag_id',
         'due_date',
         'projet_id',
         'parent_task_id',
@@ -81,5 +81,10 @@ class Tache extends Model
     public function commentaires(): HasMany
     {
         return $this->hasMany(Commentaires::class);
+    }
+
+    public function tag(): BelongsTo
+    {
+        return $this->belongsTo(Tag::class);
     }
 }

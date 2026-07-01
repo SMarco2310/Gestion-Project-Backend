@@ -71,9 +71,9 @@ class AuthController extends Controller
         $user = $request->user();
         
         $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $user->id,
-            'bio' => 'sometimes|string|max:500',
+            // 'name' => 'sometimes|string|max:255',
+            // 'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            // 'bio' => 'sometimes|string|max:500',
             'password' => 'sometimes|string|min:8',
             'current_password' => 'required_with:password|string',
         ]);
@@ -105,22 +105,17 @@ class AuthController extends Controller
         return response()->json(['message'=>'User is Logged Out'],200);
     }
 
-    /**
+   
+     /**
      *  Profile.
      */
 
-
-    public function profile(Request $request)
-    {
-        // this just return the current user's informations
-        return response()-> json(['user' => $request->user(), 'message' => 'Profile retrieved successfully'],200);
-    }
-
-
-    // public function destroy(string $id)
+    // public function profile(Request $request)
     // {
-    //     //
+    //     // this just return the current user's informations
+    //     return response()-> json(['user' => $request->user(), 'message' => 'Profile retrieved successfully'],200);
     // }
+
 
     /**
      * Upload profile picture for the user.
