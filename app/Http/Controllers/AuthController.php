@@ -52,6 +52,13 @@ class AuthController extends Controller
                         ]);
                     }
 
+                    // Attach to project if present
+                    if ($invitation->projet_id) {
+                        $user->projets_collaborated()->attach($invitation->projet_id, [
+                            'joined_at' => now(),
+                        ]);
+                    }
+
                     // Mark invitation as accepted
                     $invitation->update(['status' => 'accepted']);
                 }

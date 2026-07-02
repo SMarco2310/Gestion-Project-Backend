@@ -14,6 +14,7 @@ class Invitation extends Model
         'token',
         'organization_id',
         'team_id',
+        'projet_id',
         'role',
         'status',
         'expires_at',
@@ -36,6 +37,13 @@ class Invitation extends Model
     {
         return $this->belongsTo(Team::class);
     }
+
+    public function projet()
+    {
+        return $this->belongsTo(Projet::class);
+    }
+
+
 
     public function inviter()
     {

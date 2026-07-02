@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('name', 255);
             $table->text('description')->nullable();
-            $table->text('reference_code');
+            $table->string('reference_code');
             $table->enum('status',['à faire', 'en cours', 'terminé'])->default('à faire');
             $table->date('start_date')->default(now());
             $table->date('end_date')->default(now()->addDays(7));
             $table->foreignId('organization_id')->constrained('organizations', 'id')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users', 'id')->onDelete('cascade');
             $table->timestamps();
 
             $table->unique(['organization_id', 'reference_code']);

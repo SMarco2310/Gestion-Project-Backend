@@ -81,4 +81,11 @@ class User extends Authenticatable
                     ->withPivot('assigned_at')
                     ->withCasts(['assigned_at' => 'datetime']);
     }
+
+    public function projets_collaborated()
+    {
+        return $this->belongsToMany(Projet::class, 'projet_user')
+                    ->withPivot('joined_at')
+                    ->withCasts(['joined_at' => 'datetime']);
+    }
 }

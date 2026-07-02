@@ -25,6 +25,7 @@ class InvitationController extends Controller
                 'email' => 'required|email',
                 'organization_id' => 'required|exists:organizations,id',
                 'team_id' => 'nullable|exists:teams,id',
+                'projet_id' => 'nullable|exists:projets,id',
                 'role' => 'nullable|in:admin,membre',
             ]);
 
@@ -47,6 +48,7 @@ class InvitationController extends Controller
                 'token' => $token,
                 'organization_id' => $validated['organization_id'],
                 'team_id' => $validated['team_id'] ?? null,
+                'projet_id' => $validated['projet_id'] ?? null,
                 'role' => $validated['role'] ?? 'membre',
                 'status' => 'pending',
                 'expires_at' => $expiresAt,
@@ -85,7 +87,7 @@ class InvitationController extends Controller
     public function show($token)
     {
         try {
-            $invitation = Invitation::with(['organization:id,name', 'team:id,name', 'inviter:id,name'])
+            $invitation = Invitation::with(['organization:id,name', 'team:id,name', 'projet:id,name', 'inviter:id,name'])
                 ->where('token', $token)
                 ->firstOrFail();
 
@@ -153,6 +155,15 @@ class InvitationController extends Controller
             if ($invitation->team_id) {
                 if (!$user->teams()->where('team_id', $invitation->team_id)->exists()) {
                     $user->teams()->attach($invitation->team_id, [
+                        'joined_at' => now(),
+                    ]);
+                }
+            }
+
+            // Add to project if specified
+            if ($invitation->projet_id) {
+                if (!$user->projets_collaborated()->where('projet_id', $invitation->projet_id)->exists()) {
+                    $user->projets_collaborated()->attach($invitation->projet_id, [
                         'joined_at' => now(),
                     ]);
                 }

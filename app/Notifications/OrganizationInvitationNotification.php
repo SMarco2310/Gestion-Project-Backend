@@ -38,7 +38,7 @@ class OrganizationInvitationNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         // Load the relations so we can show names
-        $this->invitation->loadMissing(['organization', 'team', 'inviter']);
+        $this->invitation->loadMissing(['organization', 'team', 'projet', 'inviter']);
 
         $orgName = $this->invitation->organization->name;
         $inviterName = $this->invitation->inviter ? $this->invitation->inviter->name : 'Someone';
@@ -53,6 +53,10 @@ class OrganizationInvitationNotification extends Notification
 
         if ($this->invitation->team) {
             $mailMessage->line('You will also be added to the team "' . $this->invitation->team->name . '".');
+        }
+
+        if ($this->invitation->projet) {
+            $mailMessage->line('You have been invited to collaborate on the project "' . $this->invitation->projet->name . '".');
         }
 
         $mailMessage->action('Accept Invitation', $inviteUrl)

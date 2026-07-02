@@ -12,6 +12,22 @@ use Illuminate\Support\Facades\Log;
 class TacheController extends Controller
 {
     /**
+     * Check if user has access to a project (as owner or team member).
+     */
+    private function hasAccessToProject(Projet $projet, $user): bool
+    {
+        if ($projet->user_id === $user->id) {
+            return true;
+        }
+        if ($projet->team_id && $projet->team()->whereHas('members', function ($q) use ($user) {
+            $q->where('users.id', $user->id);
+        })->exists()) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Automatically sync a project's status based on its tasks.
      */
     private function syncProjectStatus(Projet $projet): void
@@ -41,7 +57,12 @@ class TacheController extends Controller
     {
         try {
             $query = Tache::whereHas('projet', function ($query) use ($request) {
-                $query->where('user_id', $request->user()->id);
+                $query->where('user_id', $request->user()->id)
+                      ->orWhereHas('team', function ($teamQuery) use ($request) {
+                          $teamQuery->whereHas('members', function ($memberQuery) use ($request) {
+                              $memberQuery->where('users.id', $request->user()->id);
+                          });
+                      });
             });
 
             if ($request->has('projet_id')) {
@@ -82,7 +103,14 @@ class TacheController extends Controller
                 'parent_task_id' => 'nullable|exists:taches,id',
             ]);
 
-            $projet = $request->user()->projets()->findOrFail($validated['projet_id']);
+            $projet = Projet::findOrFail($validated['projet_id']);
+
+            if (!$this->hasAccessToProject($projet, $request->user())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to add tasks to this project.'
+                ], 403);
+            }
 
             $tache = $projet->taches()->create($validated);
 
@@ -120,14 +148,12 @@ class TacheController extends Controller
     public function show(Request $request, $id)
     {
         try {
-            $tache = Tache::with(['commentaires', 'subTasks', 'tag'])
-                ->whereHas('projet', fn($q) => $q->where('user_id', $request->user()->id))
-                ->findOrFail($id);
+            $tache = Tache::with(['commentaires', 'subTasks', 'tag'])->findOrFail($id);
 
-            if ($tache->projet->user_id !== $request->user()->id) {
+            if (!$this->hasAccessToProject($tache->projet, $request->user())) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You do not own this task.'
+                    'message' => 'You do not have permission to access this task.'
                 ], 403);
             }
 
@@ -159,10 +185,10 @@ class TacheController extends Controller
         try {
             $tach = Tache::findOrFail($id);
 
-            if ($tach->projet->user_id !== $request->user()->id) {
+            if (!$this->hasAccessToProject($tach->projet, $request->user())) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You do not own this task.'
+                    'message' => 'You do not have permission to perform this action.'
                 ], 403);
             }
 
@@ -198,10 +224,10 @@ class TacheController extends Controller
         try {
             $tach = Tache::findOrFail($id);
 
-            if ($tach->projet->user_id !== $request->user()->id) {
+            if (!$this->hasAccessToProject($tach->projet, $request->user())) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You do not own this task.'
+                    'message' => 'You do not have permission to perform this action.'
                 ], 403);
             }
 
@@ -237,10 +263,10 @@ class TacheController extends Controller
         try {
             $tach = Tache::findOrFail($id);
 
-            if ($tach->projet->user_id !== $request->user()->id) {
+            if (!$this->hasAccessToProject($tach->projet, $request->user())) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You do not own this task.'
+                    'message' => 'You do not have permission to perform this action.'
                 ], 403);
             }
 

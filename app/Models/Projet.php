@@ -19,7 +19,8 @@ class Projet extends Model
         'start_date',
         'end_date',
         'user_id',
-        'team_id'
+        'team_id',
+        'organization_id'
     ];
 
     protected function casts(): array
@@ -73,5 +74,12 @@ class Projet extends Model
 
     public function taches(){
         return $this->hasMany(Tache::class);
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'projet_user')
+                    ->withPivot('joined_at')
+                    ->withTimestamps();
     }
 }
