@@ -8,20 +8,35 @@ class Organization extends Model
 {
     
     protected $fillable = [
-        'user_id',
         'name',
         'description',
-        // 'website',
         'logo',
     ];
 
-    //This will help accessing the users in the organization
-    public function users(){
-        $this->hasMany(User::class);
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'organization_user')
+                    ->withPivot(['role', 'joined_at'])
+                    ->withCasts([
+                        'joined_at' => 'datetime',
+                    ]);
     }
-    // This will help in accessing the projets of the organization
-    public function projets(){
-        $this->hasMany(Projets::class);
+
+    public function teams()
+    {
+        return $this->hasMany(Team::class);
     }
-    public 
+
+    
+    public function notifications()
+    {
+        return $this->hasMany(Notifications::class);
+    }
+
+    public function projets()
+    {
+        return $this->hasMany(Projet::class);
+    }
 }
+
+

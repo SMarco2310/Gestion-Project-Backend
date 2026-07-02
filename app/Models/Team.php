@@ -11,7 +11,6 @@ class Team extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 
         'organization_id', 
         'name',
     ];
@@ -21,13 +20,16 @@ class Team extends Model
         return $this->belongsTo(Organization::class);
     }
 
-    public function user()
+    public function members()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsToMany(User::class, 'team_user')
+                    ->withPivot('joined_at')
+                    ->withCasts([
+                        'joined_at' => 'datetime',
+                    ]);
     }
-
-    // public function members()
-    // {
-    //     return $this->belongsToMany(User::class, 'team_members');
-    // }
+    public function projets()
+    {
+        return $this->hasMany(Projet::class);
+    }
 }

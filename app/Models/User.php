@@ -12,7 +12,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Notifications\ResetPasswordNotification;
 
-#[Fillable(['name', 'email','bio', 'password', 'profile_picture','organization_id'])]
+#[Fillable(['name', 'email','bio', 'password', 'profile_picture'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -56,10 +56,29 @@ class User extends Authenticatable
     );
 }
 
-public function organization()
-{
-    return $this->belongsTo(Organization::class);
-}
+    public function organizations()
+        {
+            return $this->belongsToMany(Organization::class, 'organization_user')
+                        ->withPivot(['role', 'joined_at'])
+                        ->withCasts([
+                            'joined_at' => 'datetime',
+                        ]);
+        }
 
 
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class, 'team_user')
+                    ->withPivot('joined_at')
+                    ->withCasts([
+                        'joined_at' => 'datetime',
+                    ]);
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user')
+                    ->withPivot('assigned_at')
+                    ->withCasts(['assigned_at' => 'datetime']);
+    }
 }

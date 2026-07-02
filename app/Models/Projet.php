@@ -18,7 +18,8 @@ class Projet extends Model
         'status',
         'start_date',
         'end_date',
-        'user_id'
+        'user_id',
+        'team_id'
     ];
 
     protected function casts(): array
@@ -56,13 +57,19 @@ class Projet extends Model
         });
     }
 
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
     public function user(){
         return $this->belongsTo(User::class);
     }
     
-    // public function users(){
-    //     return $this->hasMany(User::class)
-    // }
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
+    }
 
     public function taches(){
         return $this->hasMany(Tache::class);
