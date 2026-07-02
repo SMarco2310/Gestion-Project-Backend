@@ -3,46 +3,199 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Organization;
+use App\Models\User;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class OrganizationMemberController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index($organizationId)
     {
-        //
+        try {
+            $organization = Organization::findOrFail($organizationId);
+            $members = $organization->users;
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Members retrieved successfully',
+                'data' => $members
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Organization not found'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error fetching members: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch members',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, $organizationId)
     {
-        //
+        return response()->json([
+            'success' => false,
+            'message' => 'Please use the invitation system to add members.'
+        ], 405);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($organizationId, $userId)
     {
-        //
+        try {
+            $organization = Organization::findOrFail($organizationId);
+            $member = $organization->users()->where('user_id', $userId)->firstOrFail();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Member retrieved successfully',
+                'data' => $member
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Organization or Member not found'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error fetching member: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch member',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * Update the specified resource in storage.
+     * Use this to change the user's role.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $organizationId, $userId)
     {
-        //
+        try {
+            $organization = Organization::findOrFail($organizationId);
+
+            // Verify authenticated user has permission (proprietaire or admin)
+            $currentUserOrg = auth()->user()->organizations()->where('organization_id', $organizationId)->first();
+            if (!$currentUserOrg || !in_array($currentUserOrg->pivot->role, ['proprietaire', 'admin'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to change member roles.'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'role' => 'required|in:proprietaire,admin,membre',
+            ]);
+
+            // Ensure the target user is actually in the organization
+            $targetUser = $organization->users()->where('user_id', $userId)->firstOrFail();
+
+            // Prevent changing the role of a proprietaire if the current user is only an admin
+            if ($targetUser->pivot->role === 'proprietaire' && $currentUserOrg->pivot->role === 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Admins cannot change the role of an owner.'
+                ], 403);
+            }
+
+            // Update the pivot table role
+            $organization->users()->updateExistingPivot($userId, [
+                'role' => $validated['role']
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Member role updated successfully',
+                'data' => [
+                    'user_id' => $userId,
+                    'role' => $validated['role']
+                ]
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Organization or Member not found'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error updating member role: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update member role',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($organizationId, $userId)
     {
-        //
+        try {
+            $organization = Organization::findOrFail($organizationId);
+
+            // Verify authenticated user has permission
+            $currentUserOrg = auth()->user()->organizations()->where('organization_id', $organizationId)->first();
+            if (!$currentUserOrg || !in_array($currentUserOrg->pivot->role, ['proprietaire', 'admin'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to remove members.'
+                ], 403);
+            }
+
+            $targetUser = $organization->users()->where('user_id', $userId)->firstOrFail();
+
+            if ($targetUser->pivot->role === 'proprietaire' && $currentUserOrg->pivot->role === 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Admins cannot remove an owner.'
+                ], 403);
+            }
+
+            // Remove the user from the organization
+            $organization->users()->detach($userId);
+
+            // Also remove them from any teams within this organization
+            // Since teams belong to organizations, we find the organization's teams and detach the user
+            $teamIds = $organization->teams()->pluck('id');
+            auth()->user()->teams()->detach($teamIds);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Member removed successfully'
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Organization or Member not found'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error removing member: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to remove member',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

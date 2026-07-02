@@ -3,20 +3,30 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class NotificationsController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-
     /**
      * Get all unread notifications for the authenticated user
      */
     public function index(Request $request)
     {
-        $notifications = $request->user()->notifications()->latest()->get();
-        return response()->json($notifications, 200);
+        try {
+            $notifications = $request->user()->notifications()->latest()->get();
+            return response()->json([
+                'success' => true,
+                'message' => 'Notifications retrieved successfully',
+                'data' => $notifications
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching notifications: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch notifications',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -24,8 +34,21 @@ class NotificationsController extends Controller
      */
     public function all(Request $request)
     {
-        $notifications = $request->user()->notifications()->latest()->paginate(15);
-        return response()->json($notifications, 200);
+        try {
+            $notifications = $request->user()->notifications()->latest()->paginate(15);
+            return response()->json([
+                'success' => true,
+                'message' => 'Notifications retrieved successfully',
+                'data' => $notifications
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching all notifications: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch notifications',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -33,9 +56,27 @@ class NotificationsController extends Controller
      */
     public function markAsRead(Request $request, $id)
     {
-        $notification = $request->user()->notifications()->findOrFail($id);
-        $notification->markAsRead();
-        return response()->json(['success' => true, 'message' => 'Notification marked as read'], 200);
+        try {
+            $notification = $request->user()->notifications()->findOrFail($id);
+            $notification->markAsRead();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notification marked as read'
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Notification not found'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error marking notification as read: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark notification as read',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -43,8 +84,21 @@ class NotificationsController extends Controller
      */
     public function markAllAsRead(Request $request)
     {
-        $request->user()->unreadNotifications->markAsRead();
-        return response()->json(['success' => true, 'message' => 'All notifications marked as read'], 200);
+        try {
+            $request->user()->unreadNotifications->markAsRead();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'All notifications marked as read'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error marking all notifications as read: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark notifications as read',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -52,9 +106,27 @@ class NotificationsController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $notification = $request->user()->notifications()->findOrFail($id);
-        $notification->delete();
-        return response()->json(['success' => true, 'message' => 'Notification deleted'], 200);
+        try {
+            $notification = $request->user()->notifications()->findOrFail($id);
+            $notification->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notification deleted successfully'
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Notification not found'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error deleting notification: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete notification',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -62,15 +134,21 @@ class NotificationsController extends Controller
      */
     public function unreadCount(Request $request)
     {
-        $count = $request->user()->unreadNotifications()->count();
-        return response()->json(['unread_count' => $count], 200);
+        try {
+            $count = $request->user()->unreadNotifications()->count();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Unread count retrieved',
+                'unread_count' => $count
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching unread count: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch unread count',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-
-    // /**
-    //  * Remove the specified resource from storage.
-    //  */
-    // public function destroy(Notifications $notifications)
-    // {
-    //     //
-    // }
 }

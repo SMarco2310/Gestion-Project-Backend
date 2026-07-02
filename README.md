@@ -1,58 +1,69 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Backend Features & Implementation Guide
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This document lists all the major features implemented in the backend application, including their associated logic, architecture, and exactly where to find the source code.
 
-## About Laravel
+## 1. Authentication & User Management
+Handles user sign-up, sign-in, profile management, and password recovery.
+- **Registration & Login**: Issues API tokens for secured routes. Implements initial integration for auto-accepting invitations during sign-up.
+  - **Location**: `app/Http/Controllers/AuthController.php`
+- **Profile Management**: Profile picture uploads, bio updates, and account termination.
+  - **Location**: `app/Http/Controllers/UserController.php`
+- **Password Resets**: Sends recovery emails and handles token verification for password resets.
+  - **Location**: `app/Http/Controllers/PasswordResetController.php`
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 2. Organization & Team Hierarchy (Multi-Tenancy)
+Supports a structured approach where users belong to Organizations, and within Organizations, they belong to specific Teams. Projects are assigned to Teams.
+- **Organizations**: Creating and managing high-level workspaces and their global settings (like reminder thresholds).
+  - **Location**: `app/Http/Controllers/OrganizationController.php`
+- **Teams**: Sub-groups within an organization that hold specific projects and members.
+  - **Location**: `app/Http/Controllers/TeamController.php`
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 3. Role-Based Access Control (RBAC) & Member Management
+Users within an organization have assigned roles (`proprietaire`, `admin`, `membre`) which dictate their permissions.
+- **Role Assignment & Verification**: Admins and Owners can change the roles of other members, or remove them entirely. It prevents Admins from modifying Owners.
+  - **Location**: `app/Http/Controllers/OrganizationMemberController.php`
+- **Database Schema**: Pivot table `organization_user` holds the role enum.
+  - **Location**: `database/migrations/2026_07_01_132324_create_organization_user_table.php`
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 4. The Invitation System
+Allows `proprietaire` or `admin` users to invite people to join their organization/team via email. 
+- **Core Logic**: Validates permissions, generates a unique secure token (valid for 2 days), and sends an email.
+  - **Location**: `app/Http/Controllers/InvitationController.php`
+- **Email Notifications**: Formats and sends the invitation email containing the frontend link with the token.
+  - **Location**: `app/Notifications/OrganizationInvitationNotification.php`
+- **Registration Hook**: Automatically attaches a new user to the invited organization/team if they provide the `invite_token` when registering.
+  - **Location**: `app/Http/Controllers/AuthController.php@register`
 
-## Learning Laravel
+## 5. Project & Task Management (Kanban Features)
+The core of the application logic for managing workflows.
+- **Projects**: Creating projects, assigning them to teams, and auto-calculating project status based on task completion.
+  - **Location**: `app/Http/Controllers/ProjetController.php`
+- **Tasks (Taches)**: CRUD operations for tasks, including priority levels, statuses, due dates, tags, and banner image uploads. Automatically syncs parent project statuses.
+  - **Location**: `app/Http/Controllers/TacheController.php`
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 6. Tags & Custom Labels
+Dynamic labeling system to categorize tasks. Users can create custom colored tags alongside default system tags.
+- **Location**: `app/Http/Controllers/TagController.php`
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 7. Comments & Communication
+Users can leave comments on specific tasks. Features user-association and authorization checks to ensure only the author can edit/delete their comment.
+- **Location**: `app/Http/Controllers/CommentairesController.php`
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## 8. Notification Tracking & Management
+In-app notification system that integrates with Laravel's core polymorphic notifications.
+- **Listing & Read/Unread Status**: Fetching paginated lists, marking as read, and getting unread counts for the dashboard sidebar.
+  - **Location**: `app/Http/Controllers/NotificationsController.php`
 
-## Agentic Development
+## 9. Automated Daily Reminders (CRON Jobs)
+A daily scheduled task that checks organization settings and active projects.
+- **Logic**: Evaluates `reminder_days_before_start` and `reminder_days_before_end` organization settings. If a project matches, it dispatches notifications to the entire assigned team.
+  - **Worker Location**: `app/Console/Commands/SendProjectReminders.php`
+- **Scheduler Location**: `app/Console/Kernel.php` (Runs daily at 08:00 and 22:00 UTC)
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
-```
-
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 10. Standardized API Responses
+All API endpoints have been refactored to wrap their execution in `try/catch` blocks.
+- **Success Responses**: Return HTTP 200/201, `success => true`, a descriptive `message`, and the resulting data.
+- **Validation Errors**: Return HTTP 422, `success => false`, and an `errors` object.
+- **Not Found Errors**: Return HTTP 404, `success => false`, preventing Laravel's default HTML exception pages from breaking frontend JSON parsers.
+- **System Failures**: Return HTTP 500, log the error securely, and provide an `error` trace.
+  - **Locations**: Applied globally across `*Controller.php` files.

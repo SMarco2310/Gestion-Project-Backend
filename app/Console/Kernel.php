@@ -17,8 +17,15 @@ class Kernel extends ConsoleKernel
             ->dailyAt('09:00')
             ->timezone('UTC');
 
-        // You can also run it every hour:
-        // $schedule->command('notifications:send-due-soon')->hourly();
+        // Send project start/end reminders every day at 8 AM
+        $schedule->command('app:send-project-reminders')
+            ->dailyAt('08:00')
+            ->timezone('UTC');
+
+        // Send project start/end reminders every day at 10 PM
+        $schedule->command('app:send-project-reminders')
+            ->dailyAt('22:00')
+            ->timezone('UTC');
     }
 
     /**

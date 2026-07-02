@@ -11,6 +11,8 @@ class Organization extends Model
         'name',
         'description',
         'logo',
+        'reminder_days_before_start',
+        'reminder_days_before_end',
     ];
 
     public function users()

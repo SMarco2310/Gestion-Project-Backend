@@ -19,10 +19,10 @@ return new class extends Migration
             $table->enum('status',['à faire', 'en cours', 'terminé'])->default('à faire');
             $table->date('start_date')->default(now());
             $table->date('end_date')->default(now()->addDays(7));
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('organization_id')->constrained('organizations', 'id')->onDelete('cascade');
             $table->timestamps();
 
-            $table->unique(['user_id', 'reference_code']);
+            $table->unique(['organization_id', 'reference_code']);
         });
     }
 
