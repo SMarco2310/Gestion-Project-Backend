@@ -107,7 +107,7 @@ class TacheController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Task created successfully',
-                'tache' => $tache
+                'tache' => $tache->fresh(['tag'])->loadCount('commentaires')
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
@@ -185,7 +185,7 @@ class TacheController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Task updated successfully',
-                'tache' => $tach->fresh()
+                'tache' => $tach->fresh(['tag'])->loadCount('commentaires')
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
@@ -266,7 +266,7 @@ class TacheController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Banner uploaded successfully',
-                'tache' => $tach->fresh()
+                'tache' => $tach->fresh(['tag'])->loadCount('commentaires')
             ], 200);
         } catch (ValidationException $e) {
             return response()->json([

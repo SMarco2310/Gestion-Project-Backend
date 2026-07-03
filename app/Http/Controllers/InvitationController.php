@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use App\Notifications\OrganizationInvitationNotification;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 class InvitationController extends Controller
 {
@@ -26,7 +25,7 @@ class InvitationController extends Controller
                 'organization_id' => 'required|exists:organizations,id',
                 'team_id' => 'nullable|exists:teams,id',
                 'projet_id' => 'nullable|exists:projets,id',
-                'role' => 'nullable|in:admin,membre',
+                'role' => 'nullable|in:admin,member,membre,proprietaire',
             ]);
 
             // Ensure the user has permission to invite (must be proprietaire or admin)
@@ -43,13 +42,17 @@ class InvitationController extends Controller
             $token = Str::random(40);
             $expiresAt = now()->addDays(2);
 
+            $inputRole = $validated['role'] ?? 'member';
+            if ($inputRole === 'membre') $inputRole = 'member';
+            if ($inputRole === 'proprietaire') $inputRole = 'owner';
+
             $invitation = Invitation::create([
                 'email' => $validated['email'],
                 'token' => $token,
                 'organization_id' => $validated['organization_id'],
                 'team_id' => $validated['team_id'] ?? null,
                 'projet_id' => $validated['projet_id'] ?? null,
-                'role' => $validated['role'] ?? 'membre',
+                'role' => $inputRole,
                 'status' => 'pending',
                 'expires_at' => $expiresAt,
                 'invited_by' => auth()->id(),
@@ -145,8 +148,13 @@ class InvitationController extends Controller
 
             // Add to organization
             if (!$user->organizations()->where('organization_id', $invitation->organization_id)->exists()) {
+                $orgRole = $invitation->role === 'admin' ? 'admin' : 'membre';
+                if ($invitation->role === 'owner') {
+                    $orgRole = 'proprietaire';
+                }
+                
                 $user->organizations()->attach($invitation->organization_id, [
-                    'role' => $invitation->role,
+                    'role' => $orgRole,
                     'joined_at' => now(),
                 ]);
             }

@@ -83,6 +83,75 @@ class TagController extends Controller
     }
 
     /**
+     * Update the specified tag in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $tag = Tag::findOrFail($id);
+
+            // Check ownership or if they are admin of the organization
+            $isOwner = $tag->user_id === $request->user()->id;
+            $isOrgAdmin = false;
+
+            if ($tag->organization_id) {
+                $isOrgAdmin = $request->user()->organizations()
+                                    ->wherePivot('organization_id', $tag->organization_id)
+                                    ->wherePivotIn('role', ['admin', 'proprietaire'])
+                                    ->exists();
+            }
+
+            if (!$isOwner && !$isOrgAdmin) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to edit this tag.'
+                ], 403);
+            }
+
+            if ($tag->is_default) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot edit default tags.'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'color' => 'nullable|string|max:50',
+            ]);
+
+            $tag->update([
+                'name' => $validated['name'],
+                'color' => $validated['color'] ?? null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tag updated successfully',
+                'tag' => $tag
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tag not found'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error updating tag: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update tag',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Remove the specified tag from storage.
      */
     public function destroy(Request $request, $id)

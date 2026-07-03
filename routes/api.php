@@ -15,6 +15,7 @@ use App\Http\Controllers\OrganizationMemberController;
 use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\VerificationController;
 /**
  * Public endpoits
  */
@@ -22,6 +23,9 @@ use App\Http\Controllers\InvitationController;
 // Authentication endpoints
 Route::post('/signup',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
+
+// Email verification (public access via signed url)
+Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
 
 // Password reset endpoints (public)
 Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink']);
@@ -38,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [UserController::class,'profile']);
     Route::post('/logout',[AuthController::class,'logout']);
     Route::put('/update-password',[AuthController::class,'update']);
+    Route::post('/email/verification-notification', [VerificationController::class, 'resend'])->middleware('throttle:6,1')->name('verification.send');
     // Users
     Route::get('/users', [UserController::class, 'getUsers']);
     Route::get('/users/{id}', [UserController::class, 'show']);
@@ -60,7 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('projets',ProjetController::class);
 
     // this handles all the methods for Tags endpoint
-    Route::apiResource('tags', TagController::class)->only(['index', 'store', 'destroy']);
+    Route::apiResource('tags', TagController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // this handles all the methods for Taches endpoint
     Route::apiResource('taches',TacheController::class);

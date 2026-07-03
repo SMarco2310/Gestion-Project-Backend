@@ -1,5 +1,4 @@
 <!-- resources/views/emails/welcome.blade.php -->
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>

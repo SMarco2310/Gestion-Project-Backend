@@ -15,8 +15,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('email');
             $table->string('token')->unique();
-            $table->foreignUuid('organization_id')->constrained()->onDelete('cascade');
-            $table->foreignUuid('team_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignUuid('organization_id')->constrained()->onDelete('cascade')->nullable();
+            $table->foreignUuid('team_id')->nullable()->constrained()->onDelete('cascade')->nullable();
             $table->enum('role', ['owner', 'admin', 'member'])->default('member');
             $table->enum('status', ['pending', 'accepted', 'expired'])->default('pending');
             $table->timestamp('expires_at');

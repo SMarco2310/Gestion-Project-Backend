@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\WelcomeNotification;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -29,6 +30,7 @@ class AuthController extends Controller
                 'password' => Hash::make($validated['password'])
             ]);
 
+            event(new Registered($user));
             $user->notify(new WelcomeNotification());
             
             // Handle invitation if token is provided
