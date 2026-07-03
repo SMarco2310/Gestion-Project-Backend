@@ -21,20 +21,22 @@ class ProjetController extends Controller
             $user = $request->user();
             
             // Get projects created by the user, OR where they are in the project team, OR directly assigned
+            $perPage = $request->query('per_page', 15);
+
             $projets = Projet::where('user_id', $user->id)
-                ->orWhereHas('team.members', function ($q) use ($user) {
+                ->orWhereHas('teams.members', function ($q) use ($user) {
                     $q->where('users.id', $user->id);
                 })
                 ->orWhereHas('users', function ($q) use ($user) {
                     $q->where('users.id', $user->id);
                 })
                 ->with('taches')
-                ->get();
+                ->paginate($perPage);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Projects retrieved successfully',
-                'projets' => $projets
+                'data' => $projets
             ], 200);
         } catch (\Exception $e) {
             Log::error('Error fetching projects: ' . $e->getMessage());
@@ -52,12 +54,25 @@ class ProjetController extends Controller
     public function store(StoreProjetRequest $request)
     {
         try {
-            $projet = $request->user()->projets()->create($request->validated());
+            $validated = $request->validated();
+            
+            // Extract team_ids if present
+            $teamIds = [];
+            if (isset($validated['team_ids'])) {
+                $teamIds = $validated['team_ids'];
+                unset($validated['team_ids']);
+            }
+            
+            $projet = $request->user()->projets()->create($validated);
+
+            if (!empty($teamIds)) {
+                $projet->teams()->sync($teamIds);
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Project created successfully',
-                'projet' => $projet
+                'projet' => $projet->load('teams')
             ], 201);
         } catch (\Exception $e) {
             Log::error('Error creating project: ' . $e->getMessage());
@@ -109,12 +124,19 @@ class ProjetController extends Controller
             $projet = Projet::findOrFail($id);
             Gate::authorize('update', $projet);
 
-            $projet->update($request->validated());
+            $validated = $request->validated();
+
+            if (isset($validated['team_ids'])) {
+                $projet->teams()->sync($validated['team_ids']);
+                unset($validated['team_ids']);
+            }
+
+            $projet->update($validated);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Project updated successfully',
-                'projet' => $projet->fresh()
+                'projet' => $projet->fresh('teams')
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([

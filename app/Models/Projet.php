@@ -21,7 +21,6 @@ class Projet extends Model
         'start_date',
         'end_date',
         'user_id',
-        'team_id',
         'organization_id'
     ];
 
@@ -69,9 +68,9 @@ class Projet extends Model
         return $this->belongsTo(User::class);
     }
     
-    public function team()
+    public function teams()
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsToMany(Team::class, 'projet_team')->withTimestamps();
     }
 
     public function taches(){

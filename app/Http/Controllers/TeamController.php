@@ -13,15 +13,17 @@ class TeamController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($organizationId)
+    public function index(Request $request, $organizationId)
     {
         try {
             $organization = Organization::findOrFail($organizationId);
+            $perPage = $request->query('per_page', 15);
+            $teams = $organization->teams()->paginate($perPage);
             
             return response()->json([
                 'success' => true,
                 'message' => 'Teams retrieved successfully',
-                'data' => $organization->teams
+                'data' => $teams
             ], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
@@ -48,10 +50,12 @@ class TeamController extends Controller
             
             $request->validate([
                 'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
             ]);
 
             $team = $organization->teams()->create([
                 'name' => $request->name,
+                'description' => $request->description,
             ]);
 
             $team->members()->attach(auth()->id(), [
@@ -128,9 +132,10 @@ class TeamController extends Controller
 
             $request->validate([
                 'name' => 'sometimes|required|string|max:255',
+                'description' => 'nullable|string',
             ]);
 
-            $team->update($request->only('name'));
+            $team->update($request->only('name', 'description'));
 
             return response()->json([
                 'success' => true,

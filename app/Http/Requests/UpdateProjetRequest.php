@@ -28,6 +28,8 @@ class UpdateProjetRequest extends FormRequest
             'status' => ['sometimes', 'in:à faire,en cours,terminé'],
             'start_date' => ['sometimes', 'nullable', 'date'],
             'end_date' => ['sometimes', 'nullable', 'date'],
+            'team_ids' => ['sometimes', 'nullable', 'array'],
+            'team_ids.*' => ['exists:teams,id'],
         ];
     }
 }

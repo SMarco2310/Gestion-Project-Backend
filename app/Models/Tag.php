@@ -15,7 +15,8 @@ class Tag extends Model
         'name',
         'color',
         'is_default',
-        'user_id'
+        'user_id',
+        'organization_id'
     ];
 
     protected $casts = [
@@ -25,6 +26,11 @@ class Tag extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     public function taches(): HasMany

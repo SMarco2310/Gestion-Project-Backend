@@ -3,30 +3,36 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Gate;
+use App\Models\Organization;
+use Illuminate\Support\Facades\Log;
 class TeamMemberController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index($organizationId, $teamId)
+    public function index(Request $request, $organizationId, $teamId)
     {
         try {
-            $organization = \App\Models\Organization::findOrFail($organizationId);
+            $organization = Organization::findOrFail($organizationId);
             $team = $organization->teams()->findOrFail($teamId);
             
+            $perPage = $request->query('per_page', 15);
+            $members = $team->members()->paginate($perPage);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Team members retrieved successfully',
-                'data' => $team->members
+                'data' => $members
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Organization or Team not found'
             ], 404);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error fetching team members: ' . $e->getMessage());
+            Log::error('Error fetching team members: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch team members',
@@ -42,10 +48,10 @@ class TeamMemberController extends Controller
     public function update(Request $request, $organizationId, $teamId, $userId)
     {
         try {
-            $organization = \App\Models\Organization::findOrFail($organizationId);
+            $organization = Organization::findOrFail($organizationId);
             $team = $organization->teams()->findOrFail($teamId);
 
-            \Illuminate\Support\Facades\Gate::authorize('update', $team);
+            Gate::authorize('update', $team);
 
             $validated = $request->validate([
                 'role' => 'required|in:team_lead,membre',
@@ -78,13 +84,13 @@ class TeamMemberController extends Controller
                 'message' => 'Validation error',
                 'errors' => $e->errors()
             ], 422);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Organization, Team, or Member not found'
             ], 404);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error updating team member role: ' . $e->getMessage());
+            Log::error('Error updating team member role: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update team member role',
@@ -99,10 +105,10 @@ class TeamMemberController extends Controller
     public function destroy($organizationId, $teamId, $userId)
     {
         try {
-            $organization = \App\Models\Organization::findOrFail($organizationId);
+            $organization = Organization::findOrFail($organizationId);
             $team = $organization->teams()->findOrFail($teamId);
 
-            \Illuminate\Support\Facades\Gate::authorize('update', $team);
+            Gate::authorize('update', $team);
 
             $targetUser = $team->members()->where('user_id', $userId)->firstOrFail();
 
@@ -117,13 +123,13 @@ class TeamMemberController extends Controller
                 'success' => false,
                 'message' => 'You do not have permission to remove team members.'
             ], 403);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Organization, Team, or Member not found'
             ], 404);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error removing team member: ' . $e->getMessage());
+            Log::error('Error removing team member: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to remove team member',

@@ -34,12 +34,13 @@ class CommentairesController extends Controller
                 });
             }
 
-            $commentaires = $query->with('user:id,name')->latest()->get();
+            $perPage = $request->query('per_page', 20);
+            $commentaires = $query->with('user:id,name')->latest()->paginate($perPage);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Comments retrieved successfully',
-                'commentaires' => $commentaires
+                'data' => $commentaires
             ], 200);
         } catch (\Exception $e) {
             Log::error('Error fetching comments: ' . $e->getMessage());

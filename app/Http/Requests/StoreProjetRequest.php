@@ -29,6 +29,9 @@ class StoreProjetRequest extends FormRequest
             'status' => ['required', 'in:à faire,en cours,terminé'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date'],
+            'organization_id' => ['required', 'exists:organizations,id'],
+            'team_ids' => ['nullable', 'array'],
+            'team_ids.*' => ['exists:teams,id'],
         ];
     }
 }

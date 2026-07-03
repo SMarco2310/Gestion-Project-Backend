@@ -14,6 +14,7 @@ class Team extends Model
     protected $fillable = [
         'organization_id', 
         'name',
+        'description',
     ];
     
     public function organization()
@@ -31,6 +32,6 @@ class Team extends Model
     }
     public function projets()
     {
-        return $this->hasMany(Projet::class);
+        return $this->belongsToMany(Projet::class, 'projet_team')->withTimestamps();
     }
 }

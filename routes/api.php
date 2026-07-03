@@ -13,6 +13,8 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\OrganizationMemberController;
 use App\Http\Controllers\TeamMemberController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\InvitationController;
 /**
  * Public endpoits
  */
@@ -33,12 +35,17 @@ Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']
 Route::middleware('auth:sanctum')->group(function () {
 
     // Authenticated endpoints
-    Route::get('/me', [AuthController::class,'profile']);
+    Route::get('/me', [UserController::class,'profile']);
     Route::post('/logout',[AuthController::class,'logout']);
-    Route::put('/update',[AuthController::class,'update']);
+    Route::put('/update-password',[AuthController::class,'update']);
+    // Users
+    Route::get('/users', [UserController::class, 'getUsers']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::put('/users/profile', [UserController::class, 'update']);
 
     // Organizations and Teams
     Route::apiResource('organizations', OrganizationController::class)->only(['index', 'store']);
+    Route::post('organizations/{organization}/logo', [OrganizationController::class, 'uploadLogo'])->middleware('org.role:proprietaire,admin');
     Route::apiResource('organizations', OrganizationController::class)->only(['show'])->middleware('org.role:proprietaire,admin,membre');
     Route::apiResource('organizations', OrganizationController::class)->only(['update', 'destroy'])->middleware('org.role:proprietaire,admin');
 
@@ -46,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('organizations.teams', TeamController::class)->only(['index', 'show'])->middleware('org.role:proprietaire,admin,membre');
     Route::apiResource('organizations.teams', TeamController::class)->only(['store', 'update', 'destroy'])->middleware('org.role:proprietaire,admin');
 
-    Route::apiResource('organizations.members', OrganizationMemberController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::apiResource('organizations.members', OrganizationMemberController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
     Route::apiResource('organizations.teams.members', TeamMemberController::class)->only(['index', 'update', 'destroy']);
 
     // this handles all the methods for Projets endpoint
@@ -57,9 +64,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // this handles all the methods for Taches endpoint
     Route::apiResource('taches',TacheController::class);
+    Route::post('/taches/{id}/banner', [TacheController::class, 'uploadBanner']);
     
     // Upload profile picture
-    Route::post('/users/profile-picture', [AuthController::class, 'uploadProfilePicture']);
+    Route::post('/users/profile-picture', [UserController::class, 'uploadProfilePicture']);
 
     // Notification endpoints
     Route::get('/notifications', [NotificationsController::class, 'index']);
@@ -70,7 +78,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/notifications/{id}', [NotificationsController::class, 'destroy']);
 
     // This handles all the methods for Commantaires endpoints
-    Route::apiResource('commentaires',CommentairesController::class);
+    Route::apiResource('commentaires',CommentairesController::class)->only(['index', 'store', 'update', 'destroy']);
 
+    // Invitations
+    Route::post('/invitations', [InvitationController::class, 'store']);
+    Route::get('/invitations/{token}', [InvitationController::class, 'show']);
+    Route::post('/invitations/{token}/accept', [InvitationController::class, 'accept']);
 
 });

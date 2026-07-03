@@ -18,11 +18,12 @@ class OrganizationMemberController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($organizationId)
+    public function index(Request $request, $organizationId)
     {
         try {
             $organization = Organization::findOrFail($organizationId);
-            $members = $organization->users;
+            $perPage = $request->query('per_page', 15);
+            $members = $organization->users()->paginate($perPage);
             
             return response()->json([
                 'success' => true,

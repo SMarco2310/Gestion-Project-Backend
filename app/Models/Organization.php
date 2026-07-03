@@ -4,16 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Organization extends Model
 {
-    use HasUuids;
+    use HasFactory, HasUuids;
     protected $fillable = [
         'name',
         'description',
         'logo',
         'reminder_days_before_start',
         'reminder_days_before_end',
+        'reminder_time_start',
+        'reminder_time_end',
     ];
 
     public function users()

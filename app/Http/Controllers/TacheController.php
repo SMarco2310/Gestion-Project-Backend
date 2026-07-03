@@ -72,7 +72,8 @@ class TacheController extends Controller
                 $query->where('projet_id', $request->query('projet_id'));
             }
 
-            $taches = $query->with(['tag'])->withCount('commentaires')->get();
+            $perPage = $request->query('per_page', 15);
+            $taches = $query->with(['tag'])->withCount('commentaires')->paginate($perPage);
 
             return response()->json([
                 'success' => true,

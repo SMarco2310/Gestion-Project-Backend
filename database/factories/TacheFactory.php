@@ -18,7 +18,13 @@ class TacheFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'title' => fake()->sentence(),
+            'description' => fake()->paragraph(),
+            'status' => fake()->randomElement(['à faire', 'en cours', 'terminé']),
+            'priority' => fake()->randomElement(['faible', 'moyen', 'élevé']),
+            'due_date' => fake()->dateTimeBetween('+1 week', '+1 month')->format('Y-m-d'),
+            'projet_id' => \App\Models\Projet::factory(),
+            'tag_id' => null,
         ];
     }
 }

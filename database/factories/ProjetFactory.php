@@ -18,7 +18,13 @@ class ProjetFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->catchPhrase(),
+            'description' => fake()->paragraph(),
+            'status' => fake()->randomElement(['à faire', 'en cours', 'terminé']),
+            'start_date' => fake()->date(),
+            'end_date' => fake()->dateTimeBetween('+1 week', '+1 month')->format('Y-m-d'),
+            'user_id' => \App\Models\User::factory(),
+            'organization_id' => \App\Models\Organization::factory(),
         ];
     }
 }

@@ -14,9 +14,17 @@ class TagController extends Controller
     public function index(Request $request)
     {
         try {
-            $tags = Tag::where('user_id', $request->user()->id)
-                        ->orWhere('is_default', true)
-                        ->get();
+            $query = Tag::where('user_id', $request->user()->id)
+                        ->orWhere('is_default', true);
+
+            if ($request->has('organization_id')) {
+                $query->orWhere('organization_id', $request->organization_id);
+            } else {
+                $organizationIds = $request->user()->organizations()->pluck('organizations.id');
+                $query->orWhereIn('organization_id', $organizationIds);
+            }
+
+            $tags = $query->get();
 
             return response()->json([
                 'success' => true,
@@ -42,6 +50,7 @@ class TagController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'color' => 'nullable|string|max:50',
+                'organization_id' => 'nullable|exists:organizations,id',
             ]);
 
             $tag = Tag::create([
@@ -49,6 +58,7 @@ class TagController extends Controller
                 'color' => $validated['color'] ?? null,
                 'is_default' => false,
                 'user_id' => $request->user()->id,
+                'organization_id' => $validated['organization_id'] ?? null,
             ]);
 
             return response()->json([
@@ -80,11 +90,21 @@ class TagController extends Controller
         try {
             $tag = Tag::findOrFail($id);
             
-            // Check ownership
-            if ($tag->user_id !== $request->user()->id) {
+            // Check ownership or if they are admin of the organization
+            $isOwner = $tag->user_id === $request->user()->id;
+            $isOrgAdmin = false;
+
+            if ($tag->organization_id) {
+                $isOrgAdmin = $request->user()->organizations()
+                                    ->wherePivot('organization_id', $tag->organization_id)
+                                    ->wherePivotIn('role', ['admin', 'proprietaire'])
+                                    ->exists();
+            }
+
+            if (!$isOwner && !$isOrgAdmin) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You do not own this tag.'
+                    'message' => 'You do not have permission to delete this tag.'
                 ], 403);
             }
 

@@ -15,10 +15,11 @@ class OrganizationController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $organizations = auth()->user()->organizations;
+            $perPage = $request->query('per_page', 15);
+            $organizations = $request->user()->organizations()->paginate($perPage);
             
             return response()->json([
                 'success' => true,
@@ -47,6 +48,8 @@ class OrganizationController extends Controller
                 'logo' => 'nullable|string',
                 'reminder_days_before_start' => 'nullable|integer|min:2',
                 'reminder_days_before_end' => 'nullable|integer|min:2',
+                'reminder_time_start' => 'nullable|date_format:H:i',
+                'reminder_time_end' => 'nullable|date_format:H:i',
             ]);
 
             $organization = Organization::create([
@@ -55,6 +58,8 @@ class OrganizationController extends Controller
                 'logo' => $request->logo,
                 'reminder_days_before_start' => $request->reminder_days_before_start ?? 2,
                 'reminder_days_before_end' => $request->reminder_days_before_end ?? 2,
+                'reminder_time_start' => $request->reminder_time_start ?? '08:00:00',
+                'reminder_time_end' => $request->reminder_time_end ?? '08:00:00',
             ]);
 
             $organization->users()->attach(auth()->id(), [
@@ -125,11 +130,13 @@ class OrganizationController extends Controller
                 'name' => 'sometimes|required|string|max:255',
                 'description' => 'nullable|string',
                 'logo' => 'nullable|string',
-                'reminder_days_before_start' => 'sometimes|integer|min:2',
-                'reminder_days_before_end' => 'sometimes|integer|min:2',
+                'reminder_days_before_start' => 'nullable|integer|min:2',
+                'reminder_days_before_end' => 'nullable|integer|min:2',
+                'reminder_time_start' => 'nullable|date_format:H:i',
+                'reminder_time_end' => 'nullable|date_format:H:i',
             ]);
 
-            $organization->update($request->only(['name', 'description', 'logo', 'reminder_days_before_start', 'reminder_days_before_end']));
+            $organization->update($request->only(['name', 'description', 'logo', 'reminder_days_before_start', 'reminder_days_before_end', 'reminder_time_start', 'reminder_time_end']));
 
             return response()->json([
                 'success' => true,
@@ -181,6 +188,49 @@ class OrganizationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete organization',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Upload logo for the organization.
+     */
+    public function uploadLogo(Request $request, Organization $organization)
+    {
+        try {
+            Gate::authorize('update', $organization);
+
+            $request->validate([
+                'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:5120',
+            ]);
+
+            if ($request->hasFile('logo')) {
+                $path = $request->file('logo')->store('organizations', 'public');
+                $organization->update(['logo' => '/storage/' . $path]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Organization logo uploaded successfully',
+                'organization' => $organization->fresh()
+            ], 200);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to update this organization'
+            ], 403);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Organization logo upload error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload organization logo',
                 'error' => $e->getMessage()
             ], 500);
         }
