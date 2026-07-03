@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('taches', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('title', 255); // required
             $table->text('description')->nullable();
             $table->string('reference_code', 255)->nullable();
@@ -20,8 +20,8 @@ return new class extends Migration
             $table->enum('status',['à faire', 'en cours', 'terminé'])->default('à faire');
             $table->enum('tag',['bug', 'feature', 'improvement', 'documentation', 'design', 'testing', 'deployment'])->nullable();
             $table->date('due_date')->default(now()->addDays(7));
-            $table->foreignId('parent_task_id')->nullable()->constrained('taches')->onDelete('cascade');
-            $table->foreignId('projet_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('parent_task_id')->nullable()->constrained('taches')->onDelete('cascade');
+            $table->foreignUuid('projet_id')->constrained()->onDelete('cascade');
             $table->timestamps();
 
             // $table->unique(['user_id', 'reference_code']);

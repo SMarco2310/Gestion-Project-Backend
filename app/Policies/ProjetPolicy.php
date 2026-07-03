@@ -7,51 +7,48 @@ use App\Models\User;
 
 class ProjetPolicy
 {
-    /**
-     * viewAny -> controls index() (the list endpoint).
-     * Any logged-in user can see A list of their own projects —
-     * the controller itself (->projets()) already scopes it to theirs,
-     * so there's no extra restriction needed here.
-     */
+    private function hasAccess(User $user, Projet $projet): bool
+    {
+        if ($projet->user_id === $user->id) {
+            return true;
+        }
+
+        if ($projet->team_id && $projet->team()->whereHas('members', function ($q) use ($user) {
+            $q->where('users.id', $user->id);
+        })->exists()) {
+            return true;
+        }
+
+        if ($projet->users()->where('users.id', $user->id)->exists()) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function viewAny(User $user): bool
     {
         return true;
     }
 
-    /**
-     * view -> controls show().
-     * Only allow it if THIS project actually belongs to THIS user.
-     */
     public function view(User $user, Projet $projet): bool
     {
-        return $projet->user_id === $user->id;
+        return $this->hasAccess($user, $projet);
     }
 
-    /**
-     * create -> controls store().
-     * Any logged-in user can create a project — ownership doesn't apply
-     * yet, since the project doesn't exist until after this check passes.
-     */
     public function create(User $user): bool
     {
         return true;
     }
 
-    /**
-     * update -> controls update().
-     */
     public function update(User $user, Projet $projet): bool
     {
-        // return $projet->user_id === $user->id;
-        return true;
+        return $this->hasAccess($user, $projet);
     }
 
-    /**
-     * delete -> controls destroy().
-     */
     public function delete(User $user, Projet $projet): bool
     {
-        return $projet->user_id === $user->id;
+        return $projet->user_id === $user->id; // Only owner can delete
     }
 
     public function restore(User $user, Projet $projet): bool

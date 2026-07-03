@@ -12,15 +12,9 @@ class TachePolicy
         return true;
     }
 
-    /**
-     * A Tache has no user_id column of its own — ownership has to be
-     * checked through the Tache's related Projet (Tache belongsTo Projet,
-     * Projet belongsTo User). Same logic as the whereHas() pattern we
-     * used earlier in TaskController, just expressed as a Policy instead.
-     */
     public function view(User $user, Tache $tache): bool
     {
-        return $tache->projet()->user_id() === $user->id();
+        return $user->can('view', $tache->projet);
     }
 
     public function create(User $user): bool
@@ -30,12 +24,12 @@ class TachePolicy
 
     public function update(User $user, Tache $tache): bool
     {
-        return $tache->projet->user_id === $user->id;
+        return $user->can('update', $tache->projet);
     }
 
     public function delete(User $user, Tache $tache): bool
     {
-        return $tache->projet()->user_id() === $user->id();
+        return $user->can('update', $tache->projet);
     }
 
     public function restore(User $user, Tache $tache): bool
@@ -45,6 +39,6 @@ class TachePolicy
 
     public function forceDelete(User $user, Tache $tache): bool
     {
-        return $tache->projet()->user_id() === $user->id();
+        return $user->can('delete', $tache->projet);
     }
 }

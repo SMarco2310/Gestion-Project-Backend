@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Projet;
 use Illuminate\Support\Facades\Log;
 use \Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Gate;
 
 class ProjetController extends Controller
 {
@@ -17,7 +18,18 @@ class ProjetController extends Controller
     public function index(Request $request)
     {
         try {
-            $projets = $request->user()->projets()->with('taches')->get();
+            $user = $request->user();
+            
+            // Get projects created by the user, OR where they are in the project team, OR directly assigned
+            $projets = Projet::where('user_id', $user->id)
+                ->orWhereHas('team.members', function ($q) use ($user) {
+                    $q->where('users.id', $user->id);
+                })
+                ->orWhereHas('users', function ($q) use ($user) {
+                    $q->where('users.id', $user->id);
+                })
+                ->with('taches')
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -64,6 +76,8 @@ class ProjetController extends Controller
     {
         try {
             $projet = Projet::findOrFail($id);
+            Gate::authorize('view', $projet);
+
             $projet->load('taches');
             
             return response()->json([
@@ -93,6 +107,8 @@ class ProjetController extends Controller
     {
         try {
             $projet = Projet::findOrFail($id);
+            Gate::authorize('update', $projet);
+
             $projet->update($request->validated());
 
             return response()->json([
@@ -122,12 +138,14 @@ class ProjetController extends Controller
     {
         try {
             $projet = Projet::findOrFail($id);
+            Gate::authorize('delete', $projet);
+
             $projet->delete();
             
             return response()->json([
                 'success' => true,
                 'message' => 'Projet supprimé avec succès'
-            ], 200); // 200 instead of 204 to ensure JSON body is returned properly
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,

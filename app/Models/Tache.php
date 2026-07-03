@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Projet;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Tache extends Model
 {
     /** @use HasFactory<\Database\Factories\TacheFactory> */
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     protected $fillable=[
         'title',
@@ -49,7 +50,7 @@ class Tache extends Model
                 $lastRecord = static::whereHas('projet', function($query) use ($userId) {
                                     $query->where('user_id', $userId);
                                 })
-                                ->latest('id')
+                                ->latest('created_at')
                                 ->first();
 
                 if (! $lastRecord || ! $lastRecord->reference_code) {

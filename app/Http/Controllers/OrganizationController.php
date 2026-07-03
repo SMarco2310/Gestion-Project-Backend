@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class OrganizationController extends Controller
 {
@@ -86,6 +89,8 @@ class OrganizationController extends Controller
     public function show(Organization $organization)
     {
         try {
+            Gate::authorize('view', $organization);
+
             $organization->load(['teams', 'users', 'notifications', 'projets']);
             
             return response()->json([
@@ -93,6 +98,11 @@ class OrganizationController extends Controller
                 'message' => 'Organization retrieved successfully',
                 'organization' => $organization
             ], 200);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to view this organization'
+            ], 403);
         } catch (\Exception $e) {
             Log::error('Error fetching organization: ' . $e->getMessage());
             return response()->json([
@@ -109,6 +119,8 @@ class OrganizationController extends Controller
     public function update(Request $request, Organization $organization)
     {
         try {
+            Gate::authorize('update', $organization);
+
             $request->validate([
                 'name' => 'sometimes|required|string|max:255',
                 'description' => 'nullable|string',
@@ -124,6 +136,11 @@ class OrganizationController extends Controller
                 'message' => 'Organization updated successfully',
                 'organization' => $organization
             ], 200);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to update this organization'
+            ], 403);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -146,12 +163,19 @@ class OrganizationController extends Controller
     public function destroy(Organization $organization)
     {
         try {
+            Gate::authorize('delete', $organization);
+
             $organization->delete();
             
             return response()->json([
                 'success' => true,
                 'message' => 'Organization deleted successfully'
             ], 200);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to delete this organization'
+            ], 403);
         } catch (\Exception $e) {
             Log::error('Error deleting organization: ' . $e->getMessage());
             return response()->json([

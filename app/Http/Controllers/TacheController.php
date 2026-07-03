@@ -8,7 +8,10 @@ use App\Models\Tache;
 use App\Models\Projet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\Access\AuthorizationException;
 class TacheController extends Controller
 {
     /**
@@ -97,20 +100,14 @@ class TacheController extends Controller
                 'description' => 'nullable|string',
                 'priority' => 'required|in:faible,moyen,élevé',
                 'status' => 'required|in:à faire,en cours,terminé',
-                'tag' => 'nullable|in:bug,feature,improvement,documentation,design,testing,deployment',
+                'tag_id' => 'nullable|exists:tags,id',
                 'due_date' => 'required|date',
                 'projet_id' => 'required|exists:projets,id',
                 'parent_task_id' => 'nullable|exists:taches,id',
             ]);
 
             $projet = Projet::findOrFail($validated['projet_id']);
-
-            if (!$this->hasAccessToProject($projet, $request->user())) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You do not have permission to add tasks to this project.'
-                ], 403);
-            }
+            Gate::authorize('view', $projet);
 
             $tache = $projet->taches()->create($validated);
 
@@ -121,17 +118,22 @@ class TacheController extends Controller
                 'message' => 'Task created successfully',
                 'tache' => $tache
             ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
                 'errors' => $e->errors()
             ], 422);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Project not found'
             ], 404);
+        } catch (AuthorizationException $e) {
+             return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to add tasks to this project.'
+            ], 403);
         } catch (\Exception $e) {
             Log::error('Error creating task: ' . $e->getMessage());
             return response()->json([
@@ -149,24 +151,23 @@ class TacheController extends Controller
     {
         try {
             $tache = Tache::with(['commentaires', 'subTasks', 'tag'])->findOrFail($id);
-
-            if (!$this->hasAccessToProject($tache->projet, $request->user())) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You do not have permission to access this task.'
-                ], 403);
-            }
+            Gate::authorize('view', $tache);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Task retrieved successfully',
                 'tache' => $tache
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Task not found'
             ], 404);
+        } catch (AuthorizationException $e) {
+             return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to access this task.'
+            ], 403);
         } catch (\Exception $e) {
             Log::error('Error fetching task: ' . $e->getMessage());
             return response()->json([
@@ -184,13 +185,7 @@ class TacheController extends Controller
     {
         try {
             $tach = Tache::findOrFail($id);
-
-            if (!$this->hasAccessToProject($tach->projet, $request->user())) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You do not have permission to perform this action.'
-                ], 403);
-            }
+            Gate::authorize('update', $tach);
 
             $tach->update($request->validated());
 
@@ -201,11 +196,16 @@ class TacheController extends Controller
                 'message' => 'Task updated successfully',
                 'tache' => $tach->fresh()
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Task not found'
             ], 404);
+        } catch (AuthorizationException $e) {
+             return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to perform this action.'
+            ], 403);
         } catch (\Exception $e) {
             Log::error('Error updating task: ' . $e->getMessage());
             return response()->json([
@@ -223,13 +223,7 @@ class TacheController extends Controller
     {
         try {
             $tach = Tache::findOrFail($id);
-
-            if (!$this->hasAccessToProject($tach->projet, $request->user())) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You do not have permission to perform this action.'
-                ], 403);
-            }
+            Gate::authorize('delete', $tach);
 
             $projet = $tach->projet;
             $tach->delete();
@@ -240,11 +234,16 @@ class TacheController extends Controller
                 'success' => true,
                 'message' => 'Task deleted successfully'
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Task not found'
             ], 404);
+        } catch (AuthorizationException $e) {
+             return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to perform this action.'
+            ], 403);
         } catch (\Exception $e) {
             Log::error('Error deleting task: ' . $e->getMessage());
             return response()->json([
@@ -262,13 +261,7 @@ class TacheController extends Controller
     {
         try {
             $tach = Tache::findOrFail($id);
-
-            if (!$this->hasAccessToProject($tach->projet, $request->user())) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You do not have permission to perform this action.'
-                ], 403);
-            }
+            Gate::authorize('update', $tach);
 
             $request->validate([
                 'banner_image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:5120',
@@ -284,13 +277,13 @@ class TacheController extends Controller
                 'message' => 'Banner uploaded successfully',
                 'tache' => $tach->fresh()
             ], 200);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
                 'errors' => $e->errors()
             ], 422);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Task not found'

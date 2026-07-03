@@ -29,31 +29,22 @@ class CommentairesPolicy
      */
     public function update(User $user, Commentaires $commentaires): bool
     {
-        return $commentaires->user_id() === $user->id();
+        return $commentaires->user_id === $user->id;
 
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, Commentaires $commentaires): bool
     {
-        return $commentaires->user_id() === $user->id();
+        return $commentaires->user_id === $user->id;
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
     public function restore(User $user, Commentaires $commentaires): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
     public function forceDelete(User $user, Commentaires $commentaires): bool
     {
-        return $commentaires->user_id() === $user->id();
+        return $commentaires->user_id === $user->id;
     }
 }

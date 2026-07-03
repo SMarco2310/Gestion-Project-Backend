@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('color')->nullable();
             $table->boolean('is_default')->default(false);
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignUuid('user_id')->nullable()->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

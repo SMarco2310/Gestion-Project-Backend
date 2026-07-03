@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Team;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
 
 class TeamController extends Controller
 {
@@ -123,6 +124,8 @@ class TeamController extends Controller
             $organization = Organization::findOrFail($organizationId);
             $team = $organization->teams()->findOrFail($teamId);
 
+            Gate::authorize('update', $team);
+
             $request->validate([
                 'name' => 'sometimes|required|string|max:255',
             ]);
@@ -134,6 +137,11 @@ class TeamController extends Controller
                 'message' => 'Team updated successfully',
                 'team' => $team
             ], 200);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to update this team'
+            ], 403);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -164,12 +172,19 @@ class TeamController extends Controller
             $organization = Organization::findOrFail($organizationId);
             $team = $organization->teams()->findOrFail($teamId);
             
+            Gate::authorize('delete', $team);
+
             $team->delete();
             
             return response()->json([
                 'success' => true,
                 'message' => 'Team deleted successfully'
             ], 200);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to delete this team'
+            ], 403);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,

@@ -7,6 +7,11 @@ use App\Http\Requests\UpdateCommentairesRequest;
 use App\Models\Commentaires;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
 
 class CommentairesController extends Controller
 {
@@ -52,9 +57,11 @@ class CommentairesController extends Controller
     public function store(StoreCommentairesRequest $request)
     {
         try {
-            // Always use the authenticated user's ID for security
             $data = $request->validated();
             $data['user_id'] = $request->user()->id;
+
+            $tache = \App\Models\Tache::findOrFail($data['tache_id']);
+            Gate::authorize('view', $tache);
 
             $commentaire = Commentaires::create($data);
             $commentaire->load('user:id,name');
@@ -64,6 +71,11 @@ class CommentairesController extends Controller
                 'message' => 'Comment created successfully',
                 'commentaire' => $commentaire
             ], 201);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to comment on this task'
+            ], 403);
         } catch (\Exception $e) {
             Log::error('Error creating comment: ' . $e->getMessage());
             return response()->json([
@@ -81,13 +93,7 @@ class CommentairesController extends Controller
     {
         try {
             $commentaire = Commentaires::findOrFail($id);
-
-            if ($commentaire->user_id !== $request->user()->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 403);
-            }
+            Gate::authorize('update', $commentaire);
 
             $commentaire->update($request->validated());
             $commentaire->load('user:id,name');
@@ -97,11 +103,16 @@ class CommentairesController extends Controller
                 'message' => 'Comment updated successfully',
                 'commentaire' => $commentaire
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Comment not found'
             ], 404);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
         } catch (\Exception $e) {
             Log::error('Error updating comment: ' . $e->getMessage());
             return response()->json([
@@ -119,13 +130,7 @@ class CommentairesController extends Controller
     {
         try {
             $commentaire = Commentaires::findOrFail($id);
-
-            if ($commentaire->user_id !== $request->user()->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 403);
-            }
+            Gate::authorize('delete', $commentaire);
 
             $commentaire->delete();
 
@@ -133,11 +138,16 @@ class CommentairesController extends Controller
                 'success' => true,
                 'message' => 'Comment deleted successfully'
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Comment not found'
             ], 404);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
         } catch (\Exception $e) {
             Log::error('Error deleting comment: ' . $e->getMessage());
             return response()->json([

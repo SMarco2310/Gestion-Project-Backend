@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
@@ -102,11 +103,17 @@ class UserController extends Controller
     {
         try {
             $user = User::findOrFail($id);
+            Gate::authorize('delete', $user);
             $user->delete();
             return response()->json([
                 'success' => true,
                 'message' => 'User deleted successfully'
             ], 200);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to delete this user'
+            ], 403);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,

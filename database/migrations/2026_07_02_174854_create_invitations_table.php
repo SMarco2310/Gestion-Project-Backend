@@ -12,15 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('invitations', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('email');
             $table->string('token')->unique();
-            $table->foreignId('organization_id')->constrained()->onDelete('cascade');
-            $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
-            $table->enum('role', ['proprietaire', 'admin', 'membre'])->default('membre');
+            $table->foreignUuid('organization_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('team_id')->nullable()->constrained()->onDelete('cascade');
+            $table->enum('role', ['owner', 'admin', 'member'])->default('member');
             $table->enum('status', ['pending', 'accepted', 'expired'])->default('pending');
             $table->timestamp('expires_at');
-            $table->foreignId('invited_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignUuid('invited_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }

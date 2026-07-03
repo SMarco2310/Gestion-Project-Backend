@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
 class Projet extends Model
 {
     /** @use HasFactory<\Database\Factories\ProjetFactory> */
-    use HasFactory;
+    use HasFactory, HasUuids;
 
 
     protected $fillable=[
@@ -41,7 +43,7 @@ class Projet extends Model
 
             // IMPORTANT: Scope the query to THIS specific user
             $lastRecord = static::where('user_id', $model->user_id)
-                                ->latest('id')
+                                ->latest('created_at')
                                 ->first();
 
             if (! $lastRecord || ! $lastRecord->reference_code) {

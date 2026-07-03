@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Team extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     protected $fillable = [
         'organization_id', 
@@ -23,7 +24,7 @@ class Team extends Model
     public function members()
     {
         return $this->belongsToMany(User::class, 'team_user')
-                    ->withPivot('joined_at')
+                    ->withPivot(['role', 'joined_at'])
                     ->withCasts([
                         'joined_at' => 'datetime',
                     ]);
