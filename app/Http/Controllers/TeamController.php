@@ -17,8 +17,7 @@ class TeamController extends Controller
     {
         try {
             $organization = Organization::findOrFail($organizationId);
-            $perPage = $request->query('per_page', 15);
-            $teams = $organization->teams()->paginate($perPage);
+            $teams = $organization->teams()->with('members')->withCount('members')->get();
             
             return response()->json([
                 'success' => true,

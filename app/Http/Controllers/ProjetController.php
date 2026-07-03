@@ -21,8 +21,6 @@ class ProjetController extends Controller
             $user = $request->user();
             
             // Get projects created by the user, OR where they are in the project team, OR directly assigned
-            $perPage = $request->query('per_page', 15);
-
             $projets = Projet::where('user_id', $user->id)
                 ->orWhereHas('teams.members', function ($q) use ($user) {
                     $q->where('users.id', $user->id);
@@ -31,7 +29,7 @@ class ProjetController extends Controller
                     $q->where('users.id', $user->id);
                 })
                 ->with('taches')
-                ->paginate($perPage);
+                ->get();
 
             return response()->json([
                 'success' => true,

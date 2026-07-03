@@ -12,10 +12,10 @@ Handles user sign-up, sign-in, profile management, and password recovery.
   - **Location**: `app/Http/Controllers/PasswordResetController.php`
 
 ## 2. Organization & Team Hierarchy (Multi-Tenancy)
-Supports a structured approach where users belong to Organizations, and within Organizations, they belong to specific Teams. Projects are assigned to Teams.
-- **Organizations**: Creating and managing high-level workspaces and their global settings (like reminder thresholds).
+Supports a structured approach where users belong to Organizations, and within Organizations, they belong to specific Teams. Projects can be assigned to multiple Teams simultaneously.
+- **Organizations**: Creating and managing high-level workspaces, logo uploads, and their global settings (like dynamic reminder thresholds and specific reminder times).
   - **Location**: `app/Http/Controllers/OrganizationController.php`
-- **Teams**: Sub-groups within an organization that hold specific projects and members.
+- **Teams**: Sub-groups within an organization. Projects are linked to teams via the `projet_team` pivot table.
   - **Location**: `app/Http/Controllers/TeamController.php`
 
 ## 3. Role-Based Access Control (RBAC) & Member Management
@@ -42,7 +42,7 @@ The core of the application logic for managing workflows.
   - **Location**: `app/Http/Controllers/TacheController.php`
 
 ## 6. Tags & Custom Labels
-Dynamic labeling system to categorize tasks. Users can create custom colored tags alongside default system tags.
+Dynamic labeling system to categorize tasks. Tags are scoped to specific organizations (`organization_id`) to ensure data isolation. Users can create custom colored tags alongside default system tags.
 - **Location**: `app/Http/Controllers/TagController.php`
 
 ## 7. Comments & Communication
@@ -67,3 +67,10 @@ All API endpoints have been refactored to wrap their execution in `try/catch` bl
 - **Not Found Errors**: Return HTTP 404, `success => false`, preventing Laravel's default HTML exception pages from breaking frontend JSON parsers.
 - **System Failures**: Return HTTP 500, log the error securely, and provide an `error` trace.
   - **Locations**: Applied globally across `*Controller.php` files.
+
+## 11. Automated Testing (PHPUnit)
+The backend includes a comprehensive PHPUnit testing suite that runs in an isolated, in-memory SQLite database for maximum speed and reliability.
+- **Model Factories**: Defines robust states for generating mock `Organization`, `Team`, `Projet`, `Tache`, and `User` records.
+- **Feature Tests**: Covers Authentication, Profile modifications, RBAC restrictions on Organizations/Teams, and Project/Task management workflows.
+- **Usage**: Run `./vendor/bin/phpunit` or `php artisan test` from the server directory.
+  - **Location**: `tests/Feature/` and `database/factories/`

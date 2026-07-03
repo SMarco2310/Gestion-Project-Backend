@@ -35,7 +35,7 @@ class NotificationsController extends Controller
     public function all(Request $request)
     {
         try {
-            $notifications = $request->user()->notifications()->latest()->paginate(15);
+            $notifications = $request->user()->notifications()->latest()->get();
             return response()->json([
                 'success' => true,
                 'message' => 'Notifications retrieved successfully',

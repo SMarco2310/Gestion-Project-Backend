@@ -22,8 +22,7 @@ class OrganizationMemberController extends Controller
     {
         try {
             $organization = Organization::findOrFail($organizationId);
-            $perPage = $request->query('per_page', 15);
-            $members = $organization->users()->paginate($perPage);
+            $members = $organization->users()->get();
             
             return response()->json([
                 'success' => true,

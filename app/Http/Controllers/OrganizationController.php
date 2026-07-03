@@ -18,8 +18,7 @@ class OrganizationController extends Controller
     public function index(Request $request)
     {
         try {
-            $perPage = $request->query('per_page', 15);
-            $organizations = $request->user()->organizations()->paginate($perPage);
+            $organizations = $request->user()->organizations()->get();
             
             return response()->json([
                 'success' => true,

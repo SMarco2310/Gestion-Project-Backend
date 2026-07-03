@@ -34,8 +34,7 @@ class CommentairesController extends Controller
                 });
             }
 
-            $perPage = $request->query('per_page', 20);
-            $commentaires = $query->with('user:id,name')->latest()->paginate($perPage);
+            $commentaires = $query->with('user:id,name')->latest()->get();
 
             return response()->json([
                 'success' => true,

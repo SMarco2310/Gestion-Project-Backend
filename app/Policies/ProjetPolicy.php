@@ -13,7 +13,7 @@ class ProjetPolicy
             return true;
         }
 
-        if ($projet->team_id && $projet->team()->whereHas('members', function ($q) use ($user) {
+        if ($projet->teams()->whereHas('members', function ($q) use ($user) {
             $q->where('users.id', $user->id);
         })->exists()) {
             return true;

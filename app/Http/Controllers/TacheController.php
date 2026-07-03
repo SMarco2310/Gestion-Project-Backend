@@ -22,7 +22,7 @@ class TacheController extends Controller
         if ($projet->user_id === $user->id) {
             return true;
         }
-        if ($projet->team_id && $projet->team()->whereHas('members', function ($q) use ($user) {
+        if ($projet->teams()->whereHas('members', function ($q) use ($user) {
             $q->where('users.id', $user->id);
         })->exists()) {
             return true;
@@ -61,7 +61,7 @@ class TacheController extends Controller
         try {
             $query = Tache::whereHas('projet', function ($query) use ($request) {
                 $query->where('user_id', $request->user()->id)
-                      ->orWhereHas('team', function ($teamQuery) use ($request) {
+                      ->orWhereHas('teams', function ($teamQuery) use ($request) {
                           $teamQuery->whereHas('members', function ($memberQuery) use ($request) {
                               $memberQuery->where('users.id', $request->user()->id);
                           });
@@ -72,8 +72,7 @@ class TacheController extends Controller
                 $query->where('projet_id', $request->query('projet_id'));
             }
 
-            $perPage = $request->query('per_page', 15);
-            $taches = $query->with(['tag'])->withCount('commentaires')->paginate($perPage);
+            $taches = $query->with(['tag'])->withCount('commentaires')->get();
 
             return response()->json([
                 'success' => true,
@@ -96,16 +95,7 @@ class TacheController extends Controller
     public function store(StoreTacheRequest $request)
     {
         try {
-            $validated = $request->validate([
-                'title' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'priority' => 'required|in:faible,moyen,élevé',
-                'status' => 'required|in:à faire,en cours,terminé',
-                'tag_id' => 'nullable|exists:tags,id',
-                'due_date' => 'required|date',
-                'projet_id' => 'required|exists:projets,id',
-                'parent_task_id' => 'nullable|exists:taches,id',
-            ]);
+            $validated = $request->validated();
 
             $projet = Projet::findOrFail($validated['projet_id']);
             Gate::authorize('view', $projet);
