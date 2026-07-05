@@ -25,6 +25,8 @@ class StoreCommentairesRequest extends FormRequest
         return [
             'content' => ['required', 'string'],
             'tache_id' => ['required', 'exists:taches,id'],
+            'mentions' => ['nullable', 'array'],
+            'mentions.*' => ['exists:users,id'],
         ];
     }
 }

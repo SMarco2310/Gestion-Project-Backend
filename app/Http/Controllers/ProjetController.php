@@ -34,7 +34,7 @@ class ProjetController extends Controller
                 $query->where('organization_id', $request->query('organization_id'));
             }
 
-            $projets = $query->with('taches')->get();
+            $projets = $query->with(['taches', 'users', 'teams.members', 'user'])->get();
 
             return response()->json([
                 'success' => true,
@@ -106,7 +106,7 @@ class ProjetController extends Controller
             $projet = Projet::findOrFail($id);
             Gate::authorize('view', $projet);
 
-            $projet->load(['taches', 'teams', 'users']);
+            $projet->load(['taches', 'teams', 'users', 'user']);
             
             return response()->json([
                 'success' => true,

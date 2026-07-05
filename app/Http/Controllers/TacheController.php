@@ -65,6 +65,9 @@ class TacheController extends Controller
                           $teamQuery->whereHas('members', function ($memberQuery) use ($request) {
                               $memberQuery->where('users.id', $request->user()->id);
                           });
+                      })
+                      ->orWhereHas('users', function ($userQuery) use ($request) {
+                          $userQuery->where('users.id', $request->user()->id);
                       });
             });
 
@@ -72,7 +75,7 @@ class TacheController extends Controller
                 $query->where('projet_id', $request->query('projet_id'));
             }
 
-            $taches = $query->with(['tag'])->withCount('commentaires')->get();
+            $taches = $query->with(['tag', 'projet'])->withCount('commentaires')->get();
 
             return response()->json([
                 'success' => true,

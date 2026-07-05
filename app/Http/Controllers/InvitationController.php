@@ -58,10 +58,14 @@ class InvitationController extends Controller
                 'invited_by' => auth()->id(),
             ]);
 
-            // Notify the user via email
-            // We use Notification::route to send an email to someone who isn't a User model yet
-            Notification::route('mail', $validated['email'])
-                ->notify(new OrganizationInvitationNotification($invitation));
+            // Notify the user via email and database if they exist
+            $invitedUser = User::where('email', $validated['email'])->first();
+            if ($invitedUser) {
+                $invitedUser->notify(new OrganizationInvitationNotification($invitation));
+            } else {
+                Notification::route('mail', $validated['email'])
+                    ->notify(new OrganizationInvitationNotification($invitation));
+            }
 
             return response()->json([
                 'success' => true,

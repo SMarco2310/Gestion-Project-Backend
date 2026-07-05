@@ -63,8 +63,22 @@ class CommentairesController extends Controller
             $tache = \App\Models\Tache::findOrFail($data['tache_id']);
             Gate::authorize('view', $tache);
 
-            $commentaire = Commentaires::create($data);
+            $commentaire = Commentaires::create([
+                'content' => $data['content'],
+                'tache_id' => $data['tache_id'],
+                'user_id' => $data['user_id']
+            ]);
             $commentaire->load('user:id,name');
+
+            if (!empty($data['mentions'])) {
+                $mentionerName = $request->user()->name;
+                $mentionedUsers = \App\Models\User::whereIn('id', $data['mentions'])
+                    ->where('id', '!=', $request->user()->id)
+                    ->get();
+                foreach ($mentionedUsers as $user) {
+                    $user->notify(new \App\Notifications\CommentMentionNotification($commentaire, $mentionerName));
+                }
+            }
 
             return response()->json([
                 'success' => true,

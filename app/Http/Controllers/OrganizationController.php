@@ -45,8 +45,8 @@ class OrganizationController extends Controller
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'logo' => 'nullable|string',
-                'reminder_days_before_start' => 'nullable|integer|min:2',
-                'reminder_days_before_end' => 'nullable|integer|min:2',
+                'reminder_days_before_start' => 'nullable|integer|min:0',
+                'reminder_days_before_end' => 'nullable|integer|min:0',
                 'reminder_time_start' => 'nullable|date_format:H:i',
                 'reminder_time_end' => 'nullable|date_format:H:i',
             ]);
@@ -129,8 +129,8 @@ class OrganizationController extends Controller
                 'name' => 'sometimes|required|string|max:255',
                 'description' => 'nullable|string',
                 'logo' => 'nullable|string',
-                'reminder_days_before_start' => 'nullable|integer|min:2',
-                'reminder_days_before_end' => 'nullable|integer|min:2',
+                'reminder_days_before_start' => 'nullable|integer|min:0',
+                'reminder_days_before_end' => 'nullable|integer|min:0',
                 'reminder_time_start' => 'nullable|date_format:H:i',
                 'reminder_time_end' => 'nullable|date_format:H:i',
             ]);

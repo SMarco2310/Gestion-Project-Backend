@@ -29,7 +29,11 @@ class OrganizationInvitationNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        $channels = ['mail'];
+        if ($notifiable instanceof \App\Models\User) {
+            $channels[] = 'database';
+        }
+        return $channels;
     }
 
     /**
@@ -73,8 +77,16 @@ class OrganizationInvitationNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $this->invitation->loadMissing(['organization', 'inviter']);
+        $orgName = $this->invitation->organization->name;
+        $inviterName = $this->invitation->inviter ? $this->invitation->inviter->name : 'Un membre';
+
         return [
-            //
+            'type' => 'invitation',
+            'invitation_id' => $this->invitation->id,
+            'message' => "{$inviterName} vous a invité à rejoindre l'organisation {$orgName}.",
+            'url' => '/invite?token=' . $this->invitation->token,
+            'organization_id' => $this->invitation->organization_id
         ];
     }
 }
