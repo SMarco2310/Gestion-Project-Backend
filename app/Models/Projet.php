@@ -18,6 +18,7 @@ class Projet extends Model
         'description',
         'reference_code',
         'status',
+        'color',
         'start_date',
         'end_date',
         'user_id',

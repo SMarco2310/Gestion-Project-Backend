@@ -66,16 +66,26 @@ class ProjetController extends Controller
                 unset($validated['team_ids']);
             }
             
+            $userIds = [];
+            if (isset($validated['user_ids'])) {
+                $userIds = $validated['user_ids'];
+                unset($validated['user_ids']);
+            }
+            
             $projet = $request->user()->projets()->create($validated);
 
             if (!empty($teamIds)) {
                 $projet->teams()->sync($teamIds);
             }
+            
+            if (!empty($userIds)) {
+                $projet->users()->sync($userIds);
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Project created successfully',
-                'projet' => $projet->load('teams')
+                'projet' => $projet->load(['teams', 'users'])
             ], 201);
         } catch (\Exception $e) {
             Log::error('Error creating project: ' . $e->getMessage());
@@ -96,7 +106,7 @@ class ProjetController extends Controller
             $projet = Projet::findOrFail($id);
             Gate::authorize('view', $projet);
 
-            $projet->load('taches');
+            $projet->load(['taches', 'teams', 'users']);
             
             return response()->json([
                 'success' => true,
@@ -134,12 +144,17 @@ class ProjetController extends Controller
                 unset($validated['team_ids']);
             }
 
+            if (isset($validated['user_ids'])) {
+                $projet->users()->sync($validated['user_ids']);
+                unset($validated['user_ids']);
+            }
+
             $projet->update($validated);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Project updated successfully',
-                'projet' => $projet->fresh('teams')
+                'projet' => $projet->fresh(['teams', 'users'])
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([

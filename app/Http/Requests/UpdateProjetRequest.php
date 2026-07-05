@@ -26,10 +26,13 @@ class UpdateProjetRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', 'in:à faire,en cours,terminé'],
+            'color' => ['sometimes', 'nullable', 'string', 'in:purple,blue,green,rose,amber,slate'],
             'start_date' => ['sometimes', 'nullable', 'date'],
             'end_date' => ['sometimes', 'nullable', 'date'],
             'team_ids' => ['sometimes', 'nullable', 'array'],
             'team_ids.*' => ['exists:teams,id'],
+            'user_ids' => ['sometimes', 'nullable', 'array'],
+            'user_ids.*' => ['exists:users,id'],
         ];
     }
 }

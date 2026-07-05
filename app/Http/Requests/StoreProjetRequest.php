@@ -27,11 +27,14 @@ class StoreProjetRequest extends FormRequest
             'description' => ['nullable', 'string'],
             // 'reference_code' => ['required', 'string', 'max:255'],
             'status' => ['required', 'in:à faire,en cours,terminé'],
+            'color' => ['nullable', 'string', 'in:purple,blue,green,rose,amber,slate'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date'],
             'organization_id' => ['required', 'exists:organizations,id'],
             'team_ids' => ['nullable', 'array'],
             'team_ids.*' => ['exists:teams,id'],
+            'user_ids' => ['nullable', 'array'],
+            'user_ids.*' => ['exists:users,id'],
         ];
     }
 }
