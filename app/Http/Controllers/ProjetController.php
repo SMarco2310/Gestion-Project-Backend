@@ -20,16 +20,21 @@ class ProjetController extends Controller
         try {
             $user = $request->user();
             
-            // Get projects created by the user, OR where they are in the project team, OR directly assigned
-            $projets = Projet::where('user_id', $user->id)
-                ->orWhereHas('teams.members', function ($q) use ($user) {
-                    $q->where('users.id', $user->id);
-                })
-                ->orWhereHas('users', function ($q) use ($user) {
-                    $q->where('users.id', $user->id);
-                })
-                ->with('taches')
-                ->get();
+            $query = Projet::where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereHas('teams.members', function ($q2) use ($user) {
+                      $q2->where('users.id', $user->id);
+                  })
+                  ->orWhereHas('users', function ($q3) use ($user) {
+                      $q3->where('users.id', $user->id);
+                  });
+            });
+
+            if ($request->has('organization_id')) {
+                $query->where('organization_id', $request->query('organization_id'));
+            }
+
+            $projets = $query->with('taches')->get();
 
             return response()->json([
                 'success' => true,
