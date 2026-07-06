@@ -26,6 +26,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:send-project-reminders')
             ->dailyAt('22:00')
             ->timezone('UTC');
+
+        // Send overdue task alerts every day at 9:30 AM
+        $schedule->command('app:send-overdue-task-alerts')
+            ->dailyAt('09:30')
+            ->timezone('UTC');
     }
 
     /**

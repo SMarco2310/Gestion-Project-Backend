@@ -25,11 +25,10 @@ class StoreProjetRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            // 'reference_code' => ['required', 'string', 'max:255'],
             'status' => ['required', 'in:à faire,en cours,terminé'],
             'color' => ['nullable', 'string', 'in:purple,blue,green,rose,amber,slate'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date'],
+            'start_date' => ['required', 'date', 'after_or_equal:today'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'organization_id' => ['required', 'exists:organizations,id'],
             'team_ids' => ['nullable', 'array'],
             'team_ids.*' => ['exists:teams,id'],

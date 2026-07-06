@@ -39,15 +39,20 @@ class CommentMentionNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $frontendUrl = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000'));
-        $url = rtrim($frontendUrl, '/') . '/tasks/' . $this->commentaire->tache_id;
+        $task = $this->commentaire->tache;
+        $project = $task?->projet;
+        $commenter = \App\Models\User::where('name', $this->mentionerName)->first()
+                     ?? (object) ['name' => $this->mentionerName];
 
         return (new MailMessage)
-            ->subject($this->mentionerName . ' mentioned you in a comment')
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line($this->mentionerName . ' mentioned you in a comment on a task.')
-            ->line('"' . \Illuminate\Support\Str::limit($this->commentaire->content, 100) . '"')
-            ->action('View Comment', $url);
+            ->subject("{$this->mentionerName} vous a mentionné(e) dans un commentaire")
+            ->view('emails.collaboration.mentioned', [
+                'user' => $notifiable,
+                'commenter' => $commenter,
+                'task' => $task,
+                'project' => $project,
+                'commentContent' => \Illuminate\Support\Str::limit($this->commentaire->content, 200),
+            ]);
     }
 
     /**

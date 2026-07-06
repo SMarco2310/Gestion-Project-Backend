@@ -32,6 +32,7 @@ class UpdateTacheRequest extends FormRequest
             'due_date' => ['sometimes', 'nullable', 'date'],
             'projet_id' => ['sometimes', 'nullable', 'exists:projets,id'],
             'banner_image' => ['sometimes', 'nullable', 'string'],
+            'assignee_id' => ['sometimes', 'nullable', 'exists:users,id'],
         ];
     }
 }

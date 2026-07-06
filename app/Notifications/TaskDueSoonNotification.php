@@ -38,19 +38,12 @@ class TaskDueSoonNotification extends Notification
 
     public function toMail($notifiable): MailMessage
     {
-        $daysRemaining = now()->diffInDays($this->tache->due_date, false);
-
         return (new MailMessage)
             ->subject("Rappel : \"{$this->tache->title}\" arrive à échéance")
-            ->view('emails.due-date-reminder', [
-                // These keys match exactly what due-date-reminder.blade.php expects
-                'daysRemaining' => $daysRemaining,
-                'projectName' => $this->tache->projet->name,
-                'taskTitle' => $this->tache->title,
-                'taskDescription' => $this->tache->description,
-                'priority' => $this->tache->priority,
-                'dueDate' => $this->tache->due_date->format('dd/mm/YYYY'),
-                'taskUrl' => url((env('APP_URL'))."/taches/{$this->tache->id}"),
+            ->view('emails.alerts.deadline_reminder', [
+                'user' => $notifiable,
+                'task' => $this->tache,
+                'project' => $this->tache->projet,
             ]);
     }
 }

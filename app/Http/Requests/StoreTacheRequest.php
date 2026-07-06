@@ -31,6 +31,7 @@ class StoreTacheRequest extends FormRequest
             'due_date' => ['required', 'date'],
             'projet_id' => ['required', 'exists:projets,id'],
             'parent_task_id' => ['nullable', 'exists:taches,id'],
+            'assignee_id' => ['nullable', 'exists:users,id'],
         ];
     }
 }

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Notifications\RoleUpdatedNotification;
 
 class OrganizationMemberController extends Controller
 {
@@ -116,6 +117,9 @@ class OrganizationMemberController extends Controller
             $organization->users()->updateExistingPivot($userId, [
                 'role' => $validated['role']
             ]);
+
+            // Notify the user about the role change
+            $targetUser->notify(new RoleUpdatedNotification($organization, $validated['role']));
 
             return response()->json([
                 'success' => true,

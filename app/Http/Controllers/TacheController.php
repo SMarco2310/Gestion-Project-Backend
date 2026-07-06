@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
+use App\Notifications\TaskAssignedNotification;
+use App\Notifications\TaskReopenedNotification;
+use App\Notifications\PriorityEscalatedNotification;
+use App\Notifications\TaskUnblockedNotification;
+use App\Models\User;
 class TacheController extends Controller
 {
     /**
@@ -75,7 +80,7 @@ class TacheController extends Controller
                 $query->where('projet_id', $request->query('projet_id'));
             }
 
-            $taches = $query->with(['tag', 'projet'])->withCount('commentaires')->get();
+            $taches = $query->with(['tag', 'projet', 'assignee'])->withCount('commentaires')->get();
 
             return response()->json([
                 'success' => true,
@@ -107,10 +112,18 @@ class TacheController extends Controller
 
             $this->syncProjectStatus($projet);
 
+            // Notify assignee if one was set during creation
+            if (!empty($validated['assignee_id'])) {
+                $assignee = User::find($validated['assignee_id']);
+                if ($assignee && $assignee->id !== $request->user()->id) {
+                    $assignee->notify(new TaskAssignedNotification($tache, $projet, $request->user()));
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Task created successfully',
-                'tache' => $tache->fresh(['tag'])->loadCount('commentaires')
+                'tache' => $tache->fresh(['tag', 'assignee'])->loadCount('commentaires')
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
@@ -144,7 +157,7 @@ class TacheController extends Controller
     public function show(Request $request, $id)
     {
         try {
-            $tache = Tache::with(['commentaires', 'subTasks', 'tag'])->findOrFail($id);
+            $tache = Tache::with(['commentaires', 'subTasks', 'tag', 'assignee'])->findOrFail($id);
             Gate::authorize('view', $tache);
 
             return response()->json([
@@ -181,14 +194,65 @@ class TacheController extends Controller
             $tach = Tache::findOrFail($id);
             Gate::authorize('update', $tach);
 
+            // Capture old values before update for comparison
+            $oldAssigneeId = $tach->assignee_id;
+            $oldStatus = $tach->status;
+            $oldPriority = $tach->priority;
+
             $tach->update($request->validated());
 
             $this->syncProjectStatus($tach->projet);
 
+            // --- Notification dispatches ---
+            $currentUser = $request->user();
+            $projet = $tach->projet;
+
+            // 1. Task Assignment changed
+            if ($request->has('assignee_id') && $tach->assignee_id !== $oldAssigneeId && $tach->assignee_id) {
+                $newAssignee = User::find($tach->assignee_id);
+                if ($newAssignee && $newAssignee->id !== $currentUser->id) {
+                    $newAssignee->notify(new TaskAssignedNotification($tach, $projet, $currentUser));
+                }
+            }
+
+            // 2. Task Reopened (was terminé, now something else)
+            if ($oldStatus === 'terminé' && $tach->status !== 'terminé' && $tach->assignee_id) {
+                $assignee = User::find($tach->assignee_id);
+                if ($assignee && $assignee->id !== $currentUser->id) {
+                    $assignee->notify(new TaskReopenedNotification($tach, $projet, $currentUser, $tach->status));
+                }
+            }
+
+            // 3. Priority Escalated to élevé
+            if ($tach->priority === 'élevé' && $oldPriority !== 'élevé' && $tach->assignee_id) {
+                $assignee = User::find($tach->assignee_id);
+                if ($assignee && $assignee->id !== $currentUser->id) {
+                    $assignee->notify(new PriorityEscalatedNotification($tach, $projet, $currentUser));
+                }
+            }
+
+            // 4. Sub-task completed → check if all siblings are done → notify parent task assignee
+            if ($tach->status === 'terminé' && $oldStatus !== 'terminé' && $tach->parent_task_id) {
+                $parentTask = Tache::find($tach->parent_task_id);
+                if ($parentTask) {
+                    $allSiblingsDone = Tache::where('parent_task_id', $parentTask->id)
+                        ->where('status', '!=', 'terminé')
+                        ->doesntExist();
+
+                    if ($allSiblingsDone && $parentTask->assignee_id) {
+                        $parentAssignee = User::find($parentTask->assignee_id);
+                        $parentProjet = $parentTask->projet;
+                        if ($parentAssignee && $parentProjet) {
+                            $parentAssignee->notify(new TaskUnblockedNotification($parentTask, $parentProjet));
+                        }
+                    }
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Task updated successfully',
-                'tache' => $tach->fresh(['tag'])->loadCount('commentaires')
+                'tache' => $tach->fresh(['tag', 'assignee'])->loadCount('commentaires')
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
@@ -269,7 +333,7 @@ class TacheController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Banner uploaded successfully',
-                'tache' => $tach->fresh(['tag'])->loadCount('commentaires')
+                'tache' => $tach->fresh(['tag', 'assignee'])->loadCount('commentaires')
             ], 200);
         } catch (ValidationException $e) {
             return response()->json([

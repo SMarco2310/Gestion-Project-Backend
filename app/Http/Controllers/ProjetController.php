@@ -154,7 +154,7 @@ class ProjetController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Project updated successfully',
-                'projet' => $projet->fresh(['teams', 'users'])
+                'projet' => $projet->fresh(['taches', 'users', 'teams.members', 'user'])
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([

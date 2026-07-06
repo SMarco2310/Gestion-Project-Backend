@@ -7,6 +7,7 @@ use App\Models\Team;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Gate;
+use App\Notifications\TeamAddedNotification;
 
 class TeamController extends Controller
 {
@@ -60,6 +61,9 @@ class TeamController extends Controller
             $team->members()->attach(auth()->id(), [
                 'joined_at' => now(),
             ]);
+
+            // Notify the creator they've been added to the team
+            auth()->user()->notify(new TeamAddedNotification($team, $organization));
 
             return response()->json([
                 'success' => true,

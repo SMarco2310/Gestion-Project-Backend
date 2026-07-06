@@ -24,7 +24,8 @@ class Tache extends Model
         'due_date',
         'projet_id',
         'parent_task_id',
-        'banner_image'
+        'banner_image',
+        'assignee_id'
     ];
 
     protected function casts(): array
@@ -62,6 +63,15 @@ class Tache extends Model
                 }
             }
         });
+
+        static::saved(function ($model) {
+            if ($model->assignee_id && $model->projet_id) {
+                $projet = $model->projet ?? Projet::find($model->projet_id);
+                if ($projet) {
+                    $projet->users()->syncWithoutDetaching([$model->assignee_id]);
+                }
+            }
+        });
     }
 
     public function projet(): BelongsTo
@@ -87,5 +97,10 @@ class Tache extends Model
     public function tag(): BelongsTo
     {
         return $this->belongsTo(Tag::class);
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assignee_id');
     }
 }
