@@ -34,8 +34,8 @@ class TestEmailsCommand extends Command
         $user = User::firstOrCreate(
             ['email' => $email],
             [
-                'name' => 'Marc Sossou',
-                'password' => bcrypt('password'),
+                'name' => 'Test User',
+                'password' => bcrypt('tester123#'),
             ]
         );
 

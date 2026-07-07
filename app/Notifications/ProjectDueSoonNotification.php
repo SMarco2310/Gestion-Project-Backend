@@ -23,11 +23,15 @@ class ProjectDueSoonNotification extends Notification
 
     public function toDatabase($notifiable): array
     {
-        $daysRemaining = now()->diffInDays($this->projet->end_date, false);
+        $daysRemaining = (int) round(now()->diffInDays($this->projet->end_date, false));
+
+        $timeText = $daysRemaining > 0 
+            ? "dans {$daysRemaining} jour" . ($daysRemaining > 1 ? 's' : '')
+            : ($daysRemaining < 0 ? "et est en retard de " . abs($daysRemaining) . " jour" . (abs($daysRemaining) > 1 ? 's' : '') : "aujourd'hui");
 
         return [
             'title' => "Rappel : Le projet \"{$this->projet->name}\" se termine bientôt",
-            'message' => "Le projet \"{$this->projet->name}\" arrive à échéance dans {$daysRemaining} jours.",
+            'message' => "Le projet \"{$this->projet->name}\" arrive à échéance {$timeText}.",
             'type' => 'project_due_soon',
             'projet_id' => $this->projet->id,
             'days_remaining' => $daysRemaining,
@@ -37,12 +41,17 @@ class ProjectDueSoonNotification extends Notification
 
     public function toMail($notifiable): MailMessage
     {
-        $daysRemaining = now()->diffInDays($this->projet->end_date, false);
+        $daysRemaining = (int) round(now()->diffInDays($this->projet->end_date, false));
+
+        $timeText = $daysRemaining > 0 
+            ? "dans {$daysRemaining} jour" . ($daysRemaining > 1 ? 's' : '')
+            : ($daysRemaining < 0 ? "et est en retard de " . abs($daysRemaining) . " jour" . (abs($daysRemaining) > 1 ? 's' : '') : "aujourd'hui");
 
         return (new MailMessage)
             ->subject("Rappel : Le projet \"{$this->projet->name}\" se termine bientôt")
             ->view('emails.project-due-date-reminder', [
-                'daysRemaining' => $daysRemaining,
+                'daysRemaining' => $daysRemaining > 0 ? $daysRemaining : 0,
+                'timeText' => $timeText,
                 'projectName' => $this->projet->name,
                 'projectDescription' => $this->projet->description,
                 'endDate' => $this->projet->end_date->format('d/m/Y'),

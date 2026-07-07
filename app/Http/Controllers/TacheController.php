@@ -80,6 +80,12 @@ class TacheController extends Controller
                 $query->where('projet_id', $request->query('projet_id'));
             }
 
+            if ($request->has('organization_id')) {
+                $query->whereHas('projet', function ($q) use ($request) {
+                    $q->where('organization_id', $request->query('organization_id'));
+                });
+            }
+
             $taches = $query->with(['tag', 'projet', 'assignee'])->withCount('commentaires')->get();
 
             return response()->json([
