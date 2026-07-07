@@ -16,7 +16,7 @@
     </p>
 
     <p style="margin: 0 0 24px 0;">
-        Vous avez été ajouté(e) à l'équipe <strong>{{ $team->name }}</strong> au sein de l'organisation <span style="color: #0F172A; font-weight: 600;">{{ $organization->name }}</span>. Vous pouvez dès à présent collaborer sur tous les projets rattachés à cette équipe.
+        Vous avez été ajouté(e) à l'équipe <strong>{{ $team->name }}</strong> au sein du organization <span style="color: #0F172A; font-weight: 600;">{{ $organization->name }}</span>. Vous pouvez dès à présent collaborer sur tous les projets rattachés à cette équipe.
     </p>
 
     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 32px;">

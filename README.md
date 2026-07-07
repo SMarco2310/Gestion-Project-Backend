@@ -13,7 +13,7 @@ Handles user sign-up, sign-in, profile management, and password recovery.
 
 ## 2. Organization & Team Hierarchy (Multi-Tenancy)
 Supports a structured approach where users belong to Organizations, and within Organizations, they belong to specific Teams. Projects can be assigned to multiple Teams simultaneously.
-- **Organizations**: Creating and managing high-level workspaces, logo uploads, and their global settings (like dynamic reminder thresholds and specific reminder times).
+- **Organizations**: Creating and managing high-level organizations, logo uploads, and their global settings (like dynamic reminder thresholds and specific reminder times).
   - **Location**: `app/Http/Controllers/OrganizationController.php`
 - **Teams**: Sub-groups within an organization. Projects are linked to teams via the `projet_team` pivot table.
   - **Location**: `app/Http/Controllers/TeamController.php`

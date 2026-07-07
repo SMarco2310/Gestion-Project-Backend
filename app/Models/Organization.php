@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Organization extends Model
 {
     use HasFactory, HasUuids;
+    protected $table = 'organizations';
     protected $fillable = [
         'name',
         'description',

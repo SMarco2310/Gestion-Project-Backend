@@ -37,6 +37,6 @@ We will create and implement the 4 necessary controllers:
 ---
 
 ## Open Questions / Clarifications
-1. **User's `organization_id`:** You added `organization_id` to the `User` model's `$fillable`. Since a user can belong to *many* organizations via the pivot table, I assume this `organization_id` on the `users` table is meant to store their **"currently active workspace/organization"**. Is that correct?
+1. **User's `organization_id`:** You added `organization_id` to the `User` model's `$fillable`. Since a user can belong to *many* organizations via the pivot table, I assume this `organization_id` on the `users` table is meant to store their **"currently active organization/organization"**. Is that correct?
 2. **Projects & Organizations:** Since `Organization` has many `projets()`, should all newly created projects automatically be linked to the user's *active* organization?
 3. Your last sentence was cut off: *"all the crud operation an all that to create those api also we need to..."* Was there anything else you wanted to add?

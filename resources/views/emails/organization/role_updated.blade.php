@@ -16,7 +16,7 @@
     </p>
 
     <p style="margin: 0 0 24px 0;">
-        Nous vous informons que votre rôle au sein de l'organisation <span style="color: #0F172A; font-weight: 600;">{{ $organization->name }}</span> a été mis à jour par un administrateur.
+        Nous vous informons que votre rôle au sein du organization <span style="color: #0F172A; font-weight: 600;">{{ $organization->name }}</span> a été mis à jour par un administrateur.
     </p>
 
     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 32px; text-align: center;">

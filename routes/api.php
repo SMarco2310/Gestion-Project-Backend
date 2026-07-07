@@ -50,13 +50,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Organizations and Teams
     Route::apiResource('organizations', OrganizationController::class)->only(['index', 'store']);
-    Route::post('organizations/{organization}/logo', [OrganizationController::class, 'uploadLogo'])->middleware('org.role:proprietaire,admin');
-    Route::apiResource('organizations', OrganizationController::class)->only(['show'])->middleware('org.role:proprietaire,admin,membre');
-    Route::apiResource('organizations', OrganizationController::class)->only(['update', 'destroy'])->middleware('org.role:proprietaire,admin');
+    Route::post('organizations/{organization}/logo', [OrganizationController::class, 'uploadLogo'])->middleware('organization.role:proprietaire,admin');
+    Route::apiResource('organizations', OrganizationController::class)->only(['show'])->middleware('organization.role:proprietaire,admin,membre');
+    Route::apiResource('organizations', OrganizationController::class)->only(['update', 'destroy'])->middleware('organization.role:proprietaire,admin');
 
     // Teams
-    Route::apiResource('organizations.teams', TeamController::class)->only(['index', 'show'])->middleware('org.role:proprietaire,admin,membre');
-    Route::apiResource('organizations.teams', TeamController::class)->only(['store', 'update', 'destroy'])->middleware('org.role:proprietaire,admin');
+    Route::apiResource('organizations.teams', TeamController::class)->only(['index', 'show'])->middleware('organization.role:proprietaire,admin,membre');
+    Route::apiResource('organizations.teams', TeamController::class)->only(['store', 'update', 'destroy'])->middleware('organization.role:proprietaire,admin');
 
     Route::apiResource('organizations.members', OrganizationMemberController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
     Route::apiResource('organizations.teams.members', TeamMemberController::class)->only(['index', 'update', 'destroy']);

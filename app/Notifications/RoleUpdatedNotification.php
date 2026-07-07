@@ -37,7 +37,7 @@ class RoleUpdatedNotification extends Notification
     {
         return (new MailMessage)
             ->subject("Mise à jour de votre rôle — {$this->organization->name}")
-            ->view('emails.workspace.role_updated', [
+            ->view('emails.organization.role_updated', [
                 'user' => $notifiable,
                 'organization' => $this->organization,
                 'newRole' => $this->newRole,

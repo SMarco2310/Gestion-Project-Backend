@@ -38,7 +38,7 @@ class TeamAddedNotification extends Notification
     {
         return (new MailMessage)
             ->subject("Bienvenue dans l'équipe \"{$this->team->name}\"")
-            ->view('emails.workspace.team_added', [
+            ->view('emails.organization.team_added', [
                 'user' => $notifiable,
                 'team' => $this->team,
                 'organization' => $this->organization,
