@@ -221,31 +221,35 @@ class TacheController extends Controller
             $this->syncProjectStatus($tach->projet);
 
             // --- Notification dispatches ---
-            $currentUser = $request->user();
-            $projet = $tach->projet;
+            try {
+                $currentUser = $request->user();
+                $projet = $tach->projet;
 
-            // 1. Task Assignment changed
-            if ($request->has('assignee_id') && $tach->assignee_id !== $oldAssigneeId && $tach->assignee_id) {
-                $newAssignee = User::find($tach->assignee_id);
-                if ($newAssignee && $newAssignee->id !== $currentUser->id) {
-                    $newAssignee->notify(new TaskAssignedNotification($tach, $projet, $currentUser));
+                // 1. Task Assignment changed
+                if ($request->has('assignee_id') && $tach->assignee_id !== $oldAssigneeId && $tach->assignee_id) {
+                    $newAssignee = User::find($tach->assignee_id);
+                    if ($newAssignee && $newAssignee->id !== $currentUser->id) {
+                        $newAssignee->notify(new TaskAssignedNotification($tach, $projet, $currentUser));
+                    }
                 }
-            }
 
-            // 2. Task Reopened (was terminé, now something else)
-            if ($oldStatus === 'terminé' && $tach->status !== 'terminé' && $tach->assignee_id) {
-                $assignee = User::find($tach->assignee_id);
-                if ($assignee && $assignee->id !== $currentUser->id) {
-                    $assignee->notify(new TaskReopenedNotification($tach, $projet, $currentUser, $tach->status));
+                // 2. Task Reopened (was terminé, now something else)
+                if ($oldStatus === 'terminé' && $tach->status !== 'terminé' && $tach->assignee_id) {
+                    $assignee = User::find($tach->assignee_id);
+                    if ($assignee && $assignee->id !== $currentUser->id) {
+                        $assignee->notify(new TaskReopenedNotification($tach, $projet, $currentUser, $tach->status));
+                    }
                 }
-            }
 
-            // 3. Priority Escalated to élevé
-            if ($tach->priority === 'élevé' && $oldPriority !== 'élevé' && $tach->assignee_id) {
-                $assignee = User::find($tach->assignee_id);
-                if ($assignee && $assignee->id !== $currentUser->id) {
-                    $assignee->notify(new PriorityEscalatedNotification($tach, $projet, $currentUser));
+                // 3. Priority Escalated to élevé
+                if ($tach->priority === 'élevé' && $oldPriority !== 'élevé' && $tach->assignee_id) {
+                    $assignee = User::find($tach->assignee_id);
+                    if ($assignee && $assignee->id !== $currentUser->id) {
+                        $assignee->notify(new PriorityEscalatedNotification($tach, $projet, $currentUser));
+                    }
                 }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Error sending task notification: ' . $e->getMessage());
             }
 
             // 4. Sub-task completed → check if all siblings are done → notify parent task assignee

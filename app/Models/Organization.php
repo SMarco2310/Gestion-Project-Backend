@@ -19,10 +19,12 @@ class Organization extends Model
         'reminder_time_start',
         'reminder_time_end',
         'kanban_columns',
+        'kanban_colors',
     ];
 
     protected $casts = [
         'kanban_columns' => 'array',
+        'kanban_colors' => 'array',
     ];
 
     public function users()

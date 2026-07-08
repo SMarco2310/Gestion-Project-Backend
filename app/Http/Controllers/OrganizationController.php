@@ -245,6 +245,7 @@ class OrganizationController extends Controller
 
             $request->validate([
                 'kanban_columns' => 'required|array',
+                'kanban_colors' => 'nullable|array',
                 'renames' => 'nullable|array', // key: old name, value: new name
             ]);
 
@@ -257,12 +258,19 @@ class OrganizationController extends Controller
                 }
             }
 
-            $organization->update(['kanban_columns' => $request->kanban_columns]);
+            $updateData = ['kanban_columns' => $request->kanban_columns];
+            if ($request->has('kanban_colors')) {
+                $updateData['kanban_colors'] = $request->kanban_colors;
+            }
+
+            $organization->update($updateData);
+            $freshOrg = $organization->fresh();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Kanban columns updated successfully',
-                'kanban_columns' => $organization->fresh()->kanban_columns
+                'kanban_columns' => $freshOrg->kanban_columns,
+                'kanban_colors' => $freshOrg->kanban_colors
             ], 200);
         } catch (AuthorizationException $e) {
             return response()->json([
