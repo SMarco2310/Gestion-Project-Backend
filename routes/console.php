@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\TaskDueSoonNotification;
 use App\Notifications\ProjectDueSoonNotification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -15,9 +16,9 @@ Artisan::command('inspire', function () {
 
 // Schedule task to send notifications for tasks and projects due soon
 Artisan::command('notifications:send-due-soon', function () {
-    // Target date is exactly 2 days from today
-    $targetDateStart = Carbon::today()->addDays(2)->startOfDay();
-    $targetDateEnd = Carbon::today()->addDays(2)->endOfDay();
+    // Target window is within the next 7 days from today
+    $targetDateStart = Carbon::today()->startOfDay();
+    $targetDateEnd = Carbon::today()->addDays(7)->endOfDay();
 
     // 1. Process Tasks
     $upcomingTaches = Tache::whereIn('status', ['à faire', 'en cours'])
@@ -25,7 +26,7 @@ Artisan::command('notifications:send-due-soon', function () {
         ->get();
 
     foreach ($upcomingTaches as $tache) {
-        $user = $tache->projet->user;
+        $user = $tache->assignee ?? $tache->projet->user;
         
         if ($user) {
             $alreadyNotified = $user->notifications()
@@ -60,4 +61,8 @@ Artisan::command('notifications:send-due-soon', function () {
     }
 
     $this->info('Task and Project due soon notifications sent successfully!');
-})->purpose('Send notifications for tasks and projects due in exactly 2 days');
+})->purpose('Send notifications for tasks and projects due in the next 7 days');
+
+Schedule::command('notifications:send-due-soon')->daily();
+Schedule::command('app:send-overdue-task-alerts')->daily();
+Schedule::command('app:send-project-reminders')->daily();

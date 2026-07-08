@@ -33,8 +33,8 @@ class Tag extends Model
         return $this->belongsTo(Organization::class);
     }
 
-    public function taches(): HasMany
+    public function taches(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->hasMany(Tache::class);
+        return $this->belongsToMany(Tache::class, 'tache_tag');
     }
 }

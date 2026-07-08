@@ -39,11 +39,10 @@ class SendOverdueTaskAlerts extends Command
                 continue;
             }
 
-            // Deduplication: don't send if already notified today
+            // Deduplication: don't send if already notified
             $alreadyNotified = $recipient->notifications()
                 ->where('type', 'App\\Notifications\\TaskOverdueNotification')
                 ->whereJsonContains('data->task_id', $tache->id)
-                ->where('created_at', '>=', Carbon::today())
                 ->exists();
 
             if (!$alreadyNotified) {

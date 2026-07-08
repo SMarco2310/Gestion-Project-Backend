@@ -18,6 +18,11 @@ class Organization extends Model
         'reminder_days_before_end',
         'reminder_time_start',
         'reminder_time_end',
+        'kanban_columns',
+    ];
+
+    protected $casts = [
+        'kanban_columns' => 'array',
     ];
 
     public function users()

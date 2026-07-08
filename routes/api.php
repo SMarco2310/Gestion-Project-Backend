@@ -53,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('organizations/{organization}/logo', [OrganizationController::class, 'uploadLogo'])->middleware('organization.role:proprietaire,admin');
     Route::apiResource('organizations', OrganizationController::class)->only(['show'])->middleware('organization.role:proprietaire,admin,membre');
     Route::apiResource('organizations', OrganizationController::class)->only(['update', 'destroy'])->middleware('organization.role:proprietaire,admin');
+    Route::put('organizations/{organization}/kanban-columns', [OrganizationController::class, 'updateKanbanColumns'])->middleware('organization.role:proprietaire,admin');
 
     // Teams
     Route::apiResource('organizations.teams', TeamController::class)->only(['index', 'show'])->middleware('organization.role:proprietaire,admin,membre');

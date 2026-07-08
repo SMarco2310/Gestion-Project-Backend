@@ -33,6 +33,7 @@ class UpdateProjetRequest extends FormRequest
             'team_ids.*' => ['exists:teams,id'],
             'user_ids' => ['sometimes', 'nullable', 'array'],
             'user_ids.*' => ['exists:users,id'],
+            'is_archived' => ['sometimes', 'boolean'],
         ];
     }
 }

@@ -65,14 +65,17 @@ class TacheController extends Controller
     {
         try {
             $query = Tache::whereHas('projet', function ($query) use ($request) {
-                $query->where('user_id', $request->user()->id)
-                      ->orWhereHas('teams', function ($teamQuery) use ($request) {
-                          $teamQuery->whereHas('members', function ($memberQuery) use ($request) {
-                              $memberQuery->where('users.id', $request->user()->id);
-                          });
-                      })
-                      ->orWhereHas('users', function ($userQuery) use ($request) {
-                          $userQuery->where('users.id', $request->user()->id);
+                $query->where('is_archived', false)
+                      ->where(function ($q) use ($request) {
+                          $q->where('user_id', $request->user()->id)
+                            ->orWhereHas('teams', function ($teamQuery) use ($request) {
+                                $teamQuery->whereHas('members', function ($memberQuery) use ($request) {
+                                    $memberQuery->where('users.id', $request->user()->id);
+                                });
+                            })
+                            ->orWhereHas('users', function ($userQuery) use ($request) {
+                                $userQuery->where('users.id', $request->user()->id);
+                            });
                       });
             });
 
@@ -86,7 +89,7 @@ class TacheController extends Controller
                 });
             }
 
-            $taches = $query->with(['tag', 'projet', 'assignee'])->withCount('commentaires')->get();
+            $taches = $query->with(['tags', 'projet', 'assignee', 'subTasks'])->withCount('commentaires')->get();
 
             return response()->json([
                 'success' => true,
@@ -116,6 +119,10 @@ class TacheController extends Controller
 
             $tache = $projet->taches()->create($validated);
 
+            if (isset($validated['tag_ids'])) {
+                $tache->tags()->sync($validated['tag_ids']);
+            }
+
             $this->syncProjectStatus($projet);
 
             // Notify assignee if one was set during creation
@@ -129,7 +136,7 @@ class TacheController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Task created successfully',
-                'tache' => $tache->fresh(['tag', 'assignee'])->loadCount('commentaires')
+                'tache' => $tache->fresh(['tags', 'assignee'])->loadCount('commentaires')
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
@@ -163,7 +170,7 @@ class TacheController extends Controller
     public function show(Request $request, $id)
     {
         try {
-            $tache = Tache::with(['commentaires', 'subTasks', 'tag', 'assignee'])->findOrFail($id);
+            $tache = Tache::with(['commentaires', 'subTasks', 'tags', 'assignee'])->findOrFail($id);
             Gate::authorize('view', $tache);
 
             return response()->json([
@@ -206,6 +213,10 @@ class TacheController extends Controller
             $oldPriority = $tach->priority;
 
             $tach->update($request->validated());
+
+            if ($request->has('tag_ids')) {
+                $tach->tags()->sync($request->input('tag_ids', []));
+            }
 
             $this->syncProjectStatus($tach->projet);
 
@@ -258,7 +269,7 @@ class TacheController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Task updated successfully',
-                'tache' => $tach->fresh(['tag', 'assignee'])->loadCount('commentaires')
+                'tache' => $tach->fresh(['tags', 'assignee'])->loadCount('commentaires')
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
@@ -339,7 +350,7 @@ class TacheController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Banner uploaded successfully',
-                'tache' => $tach->fresh(['tag', 'assignee'])->loadCount('commentaires')
+                'tache' => $tach->fresh(['tags', 'assignee'])->loadCount('commentaires')
             ], 200);
         } catch (ValidationException $e) {
             return response()->json([

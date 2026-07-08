@@ -27,11 +27,13 @@ class StoreTacheRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'priority' => ['nullable', 'in:faible,moyen,élevé'],
             'status' => ['nullable', 'in:à faire,en cours,terminé'],
-            'tag_id' => ['nullable', 'exists:tags,id'],
+            'tag_ids' => ['nullable', 'array'],
+            'tag_ids.*' => ['exists:tags,id'],
             'due_date' => ['required', 'date'],
             'projet_id' => ['required', 'exists:projets,id'],
             'parent_task_id' => ['nullable', 'exists:taches,id'],
             'assignee_id' => ['nullable', 'exists:users,id'],
+            'board_column' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

@@ -20,12 +20,12 @@ class Tache extends Model
         'description',
         'priority',
         'status',
-        'tag_id',
         'due_date',
         'projet_id',
         'parent_task_id',
         'banner_image',
-        'assignee_id'
+        'assignee_id',
+        'board_column'
     ];
 
     protected function casts(): array
@@ -94,9 +94,9 @@ class Tache extends Model
         return $this->hasMany(Commentaires::class);
     }
 
-    public function tag(): BelongsTo
+    public function tags(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsTo(Tag::class);
+        return $this->belongsToMany(Tag::class, 'tache_tag');
     }
 
     public function assignee(): BelongsTo

@@ -28,11 +28,13 @@ class UpdateTacheRequest extends FormRequest
             'description' => ['sometimes', 'nullable', 'string'],
             'priority' => ['sometimes', 'in:faible,moyen,élevé'],
             'status' => ['sometimes', 'in:à faire,en cours,terminé'],
-            'tag_id' => ['sometimes', 'nullable', 'exists:tags,id'],
+            'tag_ids' => ['sometimes', 'nullable', 'array'],
+            'tag_ids.*' => ['exists:tags,id'],
             'due_date' => ['sometimes', 'nullable', 'date'],
             'projet_id' => ['sometimes', 'nullable', 'exists:projets,id'],
             'banner_image' => ['sometimes', 'nullable', 'string'],
             'assignee_id' => ['sometimes', 'nullable', 'exists:users,id'],
+            'board_column' => ['sometimes', 'nullable', 'string', 'max:255'],
         ];
     }
 }

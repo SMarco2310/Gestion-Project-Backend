@@ -22,7 +22,8 @@ class Projet extends Model
         'start_date',
         'end_date',
         'user_id',
-        'organization_id'
+        'organization_id',
+        'is_archived'
     ];
 
     protected function casts(): array
