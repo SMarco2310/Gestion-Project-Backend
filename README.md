@@ -2,6 +2,33 @@
 
 This document lists all the major features implemented in the backend application, including their associated logic, architecture, and exactly where to find the source code.
 
+## Getting Started (Setup & Run)
+
+To set up and run the backend locally, follow these steps from the `Backend/server` directory:
+
+1. **Install Dependencies:**
+   ```bash
+   composer install
+   ```
+2. **Environment Configuration:**
+   Copy the example environment file and configure your database settings.
+   ```bash
+   cp .env.example .env
+   ```
+3. **Generate Application Key:**
+   ```bash
+   php artisan key:generate
+   ```
+4. **Database Migrations & Seeding:**
+   ```bash
+   php artisan migrate --seed
+   ```
+5. **Start the Development Server:**
+   ```bash
+   php artisan serve
+   ```
+   The API will now be available at `http://localhost:8000`.
+
 ## 1. Authentication & User Management
 Handles user sign-up, sign-in, profile management, and password recovery.
 - **Registration & Login**: Issues API tokens for secured routes. Implements initial integration for auto-accepting invitations during sign-up.
@@ -36,22 +63,25 @@ Allows `proprietaire` or `admin` users to invite people to join their organizati
 
 ## 5. Project & Task Management (Kanban Features)
 The core of the application logic for managing workflows.
-- **Projects**: Creating projects, assigning them to teams, and auto-calculating project status based on task completion.
-  - **Location**: `app/Http/Controllers/ProjetController.php`
-- **Tasks (Taches)**: CRUD operations for tasks, including priority levels, statuses, due dates, tags, and banner image uploads. Automatically syncs parent project statuses.
-  - **Location**: `app/Http/Controllers/TacheController.php`
+- **Projects**: Creating projects, assigning them to multiple teams and specific users, setting project colors, and auto-calculating project status based on task completion. Supports **Project Archiving** to hide completed work without permanent deletion.
+- **Tasks (Taches)**: CRUD operations for tasks, including priority levels, statuses, due dates, multiple tags (`multi-tag support`), and banner image uploads. Automatically syncs parent project statuses.
+- **Incremental Referencing**: Projects and Tasks automatically generate human-readable incremental IDs (e.g., `PRJ-001`, `TSK-001`) via a centralized boot logic to standardize identification across the platform.
+- **Kanban Customization**: Organizations can customize their Kanban board via `kanban_colors` to apply distinct visual styling to different column statuses.
+  - **Location**: `app/Http/Controllers/ProjetController.php`, `app/Http/Controllers/TacheController.php`
 
 ## 6. Tags & Custom Labels
 Dynamic labeling system to categorize tasks. Tags are scoped to specific organizations (`organization_id`) to ensure data isolation. Users can create custom colored tags alongside default system tags.
 - **Location**: `app/Http/Controllers/TagController.php`
 
-## 7. Comments & Communication
+## 7. Comments & Mentions
 Users can leave comments on specific tasks. Features user-association and authorization checks to ensure only the author can edit/delete their comment.
+- **Mentions**: Users can tag other team members using `@username` in comments. This triggers an automated system notification specifically alerting the mentioned user.
 - **Location**: `app/Http/Controllers/CommentairesController.php`
 
 ## 8. Notification Tracking & Management
 In-app notification system that integrates with Laravel's core polymorphic notifications.
 - **Listing & Read/Unread Status**: Fetching paginated lists, marking as read, and getting unread counts for the dashboard sidebar.
+- **Human-Readable Deadlines**: Notification messaging translates raw dates into intuitive phrases (e.g., "dans X jours", "aujourd'hui", "en retard de X jours").
   - **Location**: `app/Http/Controllers/NotificationsController.php`
 
 ## 9. Automated Daily Reminders (CRON Jobs)
