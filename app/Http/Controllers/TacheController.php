@@ -6,7 +6,11 @@ use App\Http\Requests\StoreTacheRequest;
 use App\Http\Requests\UpdateTacheRequest;
 use App\Models\Tache;
 use App\Models\Projet;
+use App\Models\Checklist;
+use App\Models\ChecklistItem;
+use App\Models\Attachment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -47,7 +51,7 @@ class TacheController extends Controller
             return;
         }
 
-        $doneTasks = $projet->taches()->where('status', 'terminé')->count();
+        $doneTasks = $projet->taches()->where('status', 'done')->count();
 
         if ($doneTasks === $totalTasks) {
             $projet->update(['status' => 'terminé']);
@@ -64,32 +68,36 @@ class TacheController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Tache::whereHas('projet', function ($query) use ($request) {
-                $query->where('is_archived', false)
-                      ->where(function ($q) use ($request) {
-                          $q->where('user_id', $request->user()->id)
-                            ->orWhereHas('teams', function ($teamQuery) use ($request) {
-                                $teamQuery->whereHas('members', function ($memberQuery) use ($request) {
-                                    $memberQuery->where('users.id', $request->user()->id);
-                                });
-                            })
-                            ->orWhereHas('users', function ($userQuery) use ($request) {
-                                $userQuery->where('users.id', $request->user()->id);
-                            });
-                      });
-            });
+            $user = $request->user();
 
-            if ($request->has('projet_id')) {
-                $query->where('projet_id', $request->query('projet_id'));
-            }
+            $projetQuery = Projet::where('is_archived', false)
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhereHas('teams.members', function ($q2) use ($user) {
+                          $q2->where('users.id', $user->id);
+                      })
+                      ->orWhereHas('users', function ($q3) use ($user) {
+                          $q3->where('users.id', $user->id);
+                      });
+                });
 
             if ($request->has('organization_id')) {
-                $query->whereHas('projet', function ($q) use ($request) {
-                    $q->where('organization_id', $request->query('organization_id'));
-                });
+                $projetQuery->where('organization_id', $request->query('organization_id'));
             }
 
-            $taches = $query->with(['tags', 'projet', 'assignee', 'subTasks'])->withCount('commentaires')->get();
+            $accessibleProjectIds = $projetQuery->pluck('id');
+
+            $query = Tache::whereIn('projet_id', $accessibleProjectIds);
+
+            if ($request->has('projet_id')) {
+                if ($accessibleProjectIds->contains($request->query('projet_id'))) {
+                    $query->where('projet_id', $request->query('projet_id'));
+                } else {
+                    $query->where('projet_id', 0); // Force empty result
+                }
+            }
+
+            $taches = $query->with(['tags', 'projet', 'assignee', 'subTasks:id,parent_task_id,status'])->withCount('commentaires')->get();
 
             return response()->json([
                 'success' => true,
@@ -170,7 +178,7 @@ class TacheController extends Controller
     public function show(Request $request, $id)
     {
         try {
-            $tache = Tache::with(['commentaires', 'subTasks', 'tags', 'assignee'])->findOrFail($id);
+            $tache = Tache::with(['commentaires', 'subTasks', 'tags', 'assignee', 'checklists.items', 'attachments'])->findOrFail($id);
             Gate::authorize('view', $tache);
 
             return response()->json([
@@ -233,8 +241,8 @@ class TacheController extends Controller
                     }
                 }
 
-                // 2. Task Reopened (was terminé, now something else)
-                if ($oldStatus === 'terminé' && $tach->status !== 'terminé' && $tach->assignee_id) {
+                // 2. Task Reopened (was done, now something else)
+                if ($oldStatus === 'done' && $tach->status !== 'done' && $tach->assignee_id) {
                     $assignee = User::find($tach->assignee_id);
                     if ($assignee && $assignee->id !== $currentUser->id) {
                         $assignee->notify(new TaskReopenedNotification($tach, $projet, $currentUser, $tach->status));
@@ -253,11 +261,11 @@ class TacheController extends Controller
             }
 
             // 4. Sub-task completed → check if all siblings are done → notify parent task assignee
-            if ($tach->status === 'terminé' && $oldStatus !== 'terminé' && $tach->parent_task_id) {
+            if ($tach->status === 'done' && $oldStatus !== 'done' && $tach->parent_task_id) {
                 $parentTask = Tache::find($tach->parent_task_id);
                 if ($parentTask) {
                     $allSiblingsDone = Tache::where('parent_task_id', $parentTask->id)
-                        ->where('status', '!=', 'terminé')
+                        ->where('status', '!=', 'done')
                         ->doesntExist();
 
                     if ($allSiblingsDone && $parentTask->assignee_id) {
@@ -374,6 +382,132 @@ class TacheController extends Controller
                 'message' => 'Failed to upload banner',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function storeChecklist(Request $request, $id)
+    {
+        try {
+            $tache = Tache::findOrFail($id);
+            Gate::authorize('update', $tache);
+
+            $request->validate(['title' => 'required|string|max:255']);
+            
+            $checklist = $tache->checklists()->create([
+                'title' => $request->title
+            ]);
+
+            return response()->json(['success' => true, 'checklist' => $checklist], 201);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function destroyChecklist(Request $request, $checklist_id)
+    {
+        try {
+            $checklist = Checklist::findOrFail($checklist_id);
+            Gate::authorize('update', $checklist->tache);
+            $checklist->delete();
+            return response()->json(['success' => true], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function storeChecklistItem(Request $request, $checklist_id)
+    {
+        try {
+            $checklist = Checklist::findOrFail($checklist_id);
+            Gate::authorize('update', $checklist->tache);
+
+            $request->validate(['content' => 'required|string|max:255']);
+            
+            $item = $checklist->items()->create([
+                'content' => $request->input('content'),
+                'is_done' => false
+            ]);
+
+            return response()->json(['success' => true, 'item' => $item], 201);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateChecklistItem(Request $request, $item_id)
+    {
+        try {
+            $item = ChecklistItem::findOrFail($item_id);
+            Gate::authorize('update', $item->checklist->tache);
+
+            if ($request->has('content')) {
+                $item->content = $request->input('content');
+            }
+            if ($request->has('is_done')) {
+                $item->is_done = filter_var($request->is_done, FILTER_VALIDATE_BOOLEAN);
+            }
+            $item->save();
+
+            return response()->json(['success' => true, 'item' => $item], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function destroyChecklistItem(Request $request, $item_id)
+    {
+        try {
+            $item = ChecklistItem::findOrFail($item_id);
+            Gate::authorize('update', $item->checklist->tache);
+            $item->delete();
+            return response()->json(['success' => true], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function storeAttachment(Request $request, $id)
+    {
+        try {
+            $tache = Tache::findOrFail($id);
+            Gate::authorize('update', $tache);
+
+            $request->validate([
+                'file' => 'required|file|max:10240', // 10MB max
+            ]);
+
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $path = $file->store('attachments', 'public');
+                
+                $attachment = $tache->attachments()->create([
+                    'user_id' => $request->user()->id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'mime_type' => $file->getMimeType(),
+                    'size' => $file->getSize()
+                ]);
+
+                return response()->json(['success' => true, 'attachment' => $attachment], 201);
+            }
+            return response()->json(['success' => false, 'message' => 'No file uploaded'], 400);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function destroyAttachment(Request $request, $attachment_id)
+    {
+        try {
+            $attachment = Attachment::findOrFail($attachment_id);
+            Gate::authorize('update', $attachment->tache);
+            
+            Storage::disk('public')->delete($attachment->file_path);
+            $attachment->delete();
+            
+            return response()->json(['success' => true], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

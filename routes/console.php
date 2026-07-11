@@ -65,4 +65,5 @@ Artisan::command('notifications:send-due-soon', function () {
 
 Schedule::command('notifications:send-due-soon')->daily();
 Schedule::command('app:send-overdue-task-alerts')->daily();
+Schedule::command('app:send-overdue-project-alerts')->daily();
 Schedule::command('app:send-project-reminders')->daily();

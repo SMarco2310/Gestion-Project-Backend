@@ -72,6 +72,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('taches',TacheController::class);
     Route::post('/taches/{id}/banner', [TacheController::class, 'uploadBanner']);
     
+    // Checklists & Items
+    Route::post('/taches/{id}/checklists', [TacheController::class, 'storeChecklist']);
+    Route::delete('/checklists/{checklist_id}', [TacheController::class, 'destroyChecklist']);
+    Route::post('/checklists/{checklist_id}/items', [TacheController::class, 'storeChecklistItem']);
+    Route::put('/checklist-items/{item_id}', [TacheController::class, 'updateChecklistItem']);
+    Route::delete('/checklist-items/{item_id}', [TacheController::class, 'destroyChecklistItem']);
+
+    // Attachments
+    Route::post('/taches/{id}/attachments', [TacheController::class, 'storeAttachment']);
+    Route::delete('/attachments/{attachment_id}', [TacheController::class, 'destroyAttachment']);
+    
     // Upload profile picture
     Route::post('/users/profile-picture', [UserController::class, 'uploadProfilePicture']);
 

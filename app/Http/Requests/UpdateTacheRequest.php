@@ -27,7 +27,7 @@ class UpdateTacheRequest extends FormRequest
             'reference_code' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
             'priority' => ['sometimes', 'in:faible,moyen,élevé'],
-            'status' => ['sometimes', 'in:à faire,en cours,terminé'],
+            'status' => ['sometimes', 'in:done,not done'],
             'tag_ids' => ['sometimes', 'nullable', 'array'],
             'tag_ids.*' => ['exists:tags,id'],
             'due_date' => ['sometimes', 'nullable', 'date'],

@@ -103,4 +103,14 @@ class Tache extends Model
     {
         return $this->belongsTo(User::class, 'assignee_id');
     }
+
+    public function checklists(): HasMany
+    {
+        return $this->hasMany(Checklist::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(Attachment::class);
+    }
 }
