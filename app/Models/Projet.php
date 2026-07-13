@@ -85,4 +85,9 @@ class Projet extends Model
                     ->withPivot('joined_at')
                     ->withTimestamps();
     }
+
+    public function attachments()
+    {
+        return $this->hasMany(Attachment::class);
+    }
 }

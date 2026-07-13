@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Log;
+use App\Notifications\TeamRemovedNotification;
+
 class TeamMemberController extends Controller
 {
     /**
@@ -110,6 +112,8 @@ class TeamMemberController extends Controller
             Gate::authorize('update', $team);
 
             $targetUser = $team->members()->where('user_id', $userId)->firstOrFail();
+
+            $targetUser->notify(new TeamRemovedNotification($team, $organization));
 
             $team->members()->detach($userId);
 

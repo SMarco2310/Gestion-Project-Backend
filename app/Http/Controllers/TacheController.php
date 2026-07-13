@@ -20,6 +20,7 @@ use App\Notifications\TaskAssignedNotification;
 use App\Notifications\TaskReopenedNotification;
 use App\Notifications\PriorityEscalatedNotification;
 use App\Notifications\TaskUnblockedNotification;
+use App\Notifications\TaskRemovedNotification;
 use App\Models\User;
 class TacheController extends Controller
 {
@@ -233,11 +234,20 @@ class TacheController extends Controller
                 $currentUser = $request->user();
                 $projet = $tach->projet;
 
-                // 1. Task Assignment changed
-                if ($request->has('assignee_id') && $tach->assignee_id !== $oldAssigneeId && $tach->assignee_id) {
-                    $newAssignee = User::find($tach->assignee_id);
-                    if ($newAssignee && $newAssignee->id !== $currentUser->id) {
-                        $newAssignee->notify(new TaskAssignedNotification($tach, $projet, $currentUser));
+                // 1. Task Assignment changed or removed
+                if ($request->has('assignee_id') && $tach->assignee_id !== $oldAssigneeId) {
+                    if ($oldAssigneeId !== null) {
+                        $oldAssignee = User::find($oldAssigneeId);
+                        if ($oldAssignee && $oldAssignee->id !== $currentUser->id) {
+                            $oldAssignee->notify(new TaskRemovedNotification($tach, $projet, $currentUser));
+                        }
+                    }
+
+                    if ($tach->assignee_id) {
+                        $newAssignee = User::find($tach->assignee_id);
+                        if ($newAssignee && $newAssignee->id !== $currentUser->id) {
+                            $newAssignee->notify(new TaskAssignedNotification($tach, $projet, $currentUser));
+                        }
                     }
                 }
 

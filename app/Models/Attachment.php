@@ -13,6 +13,7 @@ class Attachment extends Model
 
     protected $fillable = [
         'tache_id',
+        'projet_id',
         'user_id',
         'file_name',
         'file_path',
@@ -30,6 +31,11 @@ class Attachment extends Model
     public function tache()
     {
         return $this->belongsTo(Tache::class);
+    }
+
+    public function projet()
+    {
+        return $this->belongsTo(Projet::class);
     }
 
     public function user()

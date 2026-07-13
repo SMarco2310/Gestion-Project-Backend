@@ -9,6 +9,8 @@ use App\Models\Projet;
 use Illuminate\Support\Facades\Log;
 use \Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Gate;
+use App\Models\Attachment;
+use Illuminate\Support\Facades\Storage;
 
 class ProjetController extends Controller
 {
@@ -106,7 +108,7 @@ class ProjetController extends Controller
             $projet = Projet::findOrFail($id);
             Gate::authorize('view', $projet);
 
-            $projet->load(['taches', 'teams', 'users', 'user']);
+            $projet->load(['taches', 'teams', 'users', 'user', 'attachments']);
             
             return response()->json([
                 'success' => true,
@@ -198,6 +200,53 @@ class ProjetController extends Controller
                 'message' => 'Failed to delete project',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function storeAttachment(Request $request, $id)
+    {
+        try {
+            $projet = Projet::findOrFail($id);
+            Gate::authorize('update', $projet);
+
+            $request->validate([
+                'file' => 'required|file|max:10240', // 10MB max
+            ]);
+
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $path = $file->store('attachments', 'public');
+                
+                $attachment = $projet->attachments()->create([
+                    'user_id' => $request->user()->id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'mime_type' => $file->getMimeType(),
+                    'size' => $file->getSize()
+                ]);
+
+                return response()->json(['success' => true, 'attachment' => $attachment], 201);
+            }
+            return response()->json(['success' => false, 'message' => 'No file uploaded'], 400);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function destroyAttachment(Request $request, $attachment_id)
+    {
+        try {
+            $attachment = Attachment::findOrFail($attachment_id);
+            if ($attachment->projet) {
+                Gate::authorize('update', $attachment->projet);
+            }
+            
+            Storage::disk('public')->delete($attachment->file_path);
+            $attachment->delete();
+            
+            return response()->json(['success' => true], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

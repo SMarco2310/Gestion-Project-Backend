@@ -64,6 +64,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // this handles all the methods for Projets endpoint
     Route::apiResource('projets',ProjetController::class);
+    Route::post('/projets/{id}/attachments', [ProjetController::class, 'storeAttachment']);
+    Route::delete('/projets/attachments/{attachment_id}', [ProjetController::class, 'destroyAttachment']);
 
     // this handles all the methods for Tags endpoint
     Route::apiResource('tags', TagController::class)->only(['index', 'store', 'update', 'destroy']);
