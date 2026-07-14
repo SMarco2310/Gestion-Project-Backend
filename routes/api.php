@@ -16,6 +16,7 @@ use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\OAuthController;
 /**
  * Public endpoits
  */
@@ -23,6 +24,9 @@ use App\Http\Controllers\VerificationController;
 // Authentication endpoints
 Route::post('/signup',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
+Route::get('/auth/custom/redirect', [OAuthController::class, 'redirect']);
+Route::get('/auth/custom/callback', [OAuthController::class, 'callback']);
+Route::post('/auth/custom/link-account', [OAuthController::class, 'linkAccount']);
 
 // Email verification (public access via signed url)
 Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');

@@ -20,13 +20,14 @@ class UserController extends Controller
 
             if ($request->has('search')) {
                 $query->where('email', 'like', '%' . $request->search . '%')
-                      ->orWhere('name', 'like', '%' . $request->search . '%');
+                      ->orWhere('first_name', 'like', '%' . $request->search . '%')
+                      ->orWhere('last_name', 'like', '%' . $request->search . '%');
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Users retrieved successfully',
-                'data' => $query->select('id', 'name', 'email')->take(10)->get()
+                'data' => $query->select('id', 'first_name', 'last_name', 'email', 'profile_picture')->take(10)->get()
             ], 200);
         } catch (\Exception $e) {
             Log::error('Error fetching users: ' . $e->getMessage());
@@ -68,9 +69,10 @@ class UserController extends Controller
             $user = $request->user();
             
             $validated = $request->validate([
-                'name' => 'sometimes|string|max:255',
-                'email' => 'sometimes|email|unique:users,email,' . $user->id,
-                'bio' => 'sometimes|string|max:500',
+                'first_name' => 'sometimes|required|string|max:255',
+                'last_name' => 'sometimes|required|string|max:255',
+                'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+                'bio' => 'sometimes|nullable|string|max:500',
             ]);
 
             $user->update($validated);
@@ -160,7 +162,7 @@ class UserController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'User retrieved successfully',
-                'user' => $user->only(['id', 'name', 'email'])
+                'user' => $user->only(['id', 'first_name', 'last_name', 'email', 'profile_picture'])
             ], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([

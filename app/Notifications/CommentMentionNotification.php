@@ -41,8 +41,7 @@ class CommentMentionNotification extends Notification
     {
         $task = $this->commentaire->tache;
         $project = $task?->projet;
-        $commenter = \App\Models\User::where('name', $this->mentionerName)->first()
-                     ?? (object) ['name' => $this->mentionerName];
+        $commenter = $this->commentaire->user ?? (object) ['name' => $this->mentionerName];
 
         return (new MailMessage)
             ->subject("{$this->mentionerName} vous a mentionné(e) dans un commentaire")

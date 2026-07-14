@@ -23,7 +23,9 @@ class OrganizationMemberController extends Controller
     {
         try {
             $organization = Organization::findOrFail($organizationId);
-            $members = $organization->users()->get();
+            $members = $organization->users()->get()->map(function ($member) {
+                return $member->only(['id', 'first_name', 'last_name', 'email', 'profile_picture']);
+            });
             
             return response()->json([
                 'success' => true,

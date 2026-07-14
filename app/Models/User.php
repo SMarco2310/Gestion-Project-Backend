@@ -14,7 +14,7 @@ use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'email','bio', 'password', 'profile_picture'])]
+#[Fillable(['first_name', 'last_name', 'phone', 'provider_id', 'email','bio', 'password', 'profile_picture'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -32,6 +32,14 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the user's full name.
+     */
+    public function getNameAttribute()
+    {
+        return trim("{$this->first_name} {$this->last_name}");
     }
 
     /**

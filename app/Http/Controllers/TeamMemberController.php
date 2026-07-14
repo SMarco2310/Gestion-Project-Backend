@@ -114,7 +114,7 @@ class TeamMemberController extends Controller
             $targetUser = $team->members()->where('user_id', $userId)->firstOrFail();
 
             try {
-            $targetUser->notify(new TeamRemovedNotification($team, $organization));
+                $targetUser->notify(new TeamRemovedNotification($team, $organization));
             } catch (\Exception $e) {
                 Log::error('Failed to send TeamRemovedNotification: ' . $e->getMessage());
             }

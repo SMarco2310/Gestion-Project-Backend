@@ -34,7 +34,7 @@ class CommentairesController extends Controller
                 });
             }
 
-            $commentaires = $query->with('user:id,name')->latest()->get();
+            $commentaires = $query->with('user:id,first_name,last_name,profile_picture')->latest()->get();
 
             return response()->json([
                 'success' => true,
@@ -68,10 +68,10 @@ class CommentairesController extends Controller
                 'tache_id' => $data['tache_id'],
                 'user_id' => $data['user_id']
             ]);
-            $commentaire->load('user:id,name');
+            $commentaire->load('user:id,first_name,last_name,profile_picture');
 
             if (!empty($data['mentions'])) {
-                $mentionerName = $request->user()->name;
+                $mentionerName = $request->user()->last_name . ' ' . $request->user()->first_name;
                 $mentionedUsers = \App\Models\User::whereIn('id', $data['mentions'])
                     ->where('id', '!=', $request->user()->id)
                     ->get();
@@ -110,7 +110,7 @@ class CommentairesController extends Controller
             Gate::authorize('update', $commentaire);
 
             $commentaire->update($request->validated());
-            $commentaire->load('user:id,name');
+            $commentaire->load('user:id,first_name,last_name,profile_picture');
 
             return response()->json([
                 'success' => true,
