@@ -282,7 +282,11 @@ class TacheController extends Controller
                         $parentAssignee = User::find($parentTask->assignee_id);
                         $parentProjet = $parentTask->projet;
                         if ($parentAssignee && $parentProjet) {
-                            $parentAssignee->notify(new TaskUnblockedNotification($parentTask, $parentProjet));
+                            try {
+                                $parentAssignee->notify(new TaskUnblockedNotification($parentTask, $parentProjet));
+                            } catch (\Exception $e) {
+                                \Illuminate\Support\Facades\Log::error('Failed to send TaskUnblockedNotification: ' . $e->getMessage());
+                            }
                         }
                     }
                 }
