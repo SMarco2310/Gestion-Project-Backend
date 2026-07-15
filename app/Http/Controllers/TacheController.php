@@ -98,7 +98,7 @@ class TacheController extends Controller
                 }
             }
 
-            $taches = $query->with(['tags', 'projet', 'assignee', 'subTasks:id,parent_task_id,status'])->withCount('commentaires')->get();
+            $taches = $query->with(['tags', 'projet:id,reference_code,name,end_date', 'assignee', 'subTasks:id,parent_task_id,status'])->withCount('commentaires')->get();
 
             return response()->json([
                 'success' => true,
@@ -179,7 +179,7 @@ class TacheController extends Controller
     public function show(Request $request, $id)
     {
         try {
-            $tache = Tache::with(['commentaires', 'subTasks', 'tags', 'assignee', 'checklists.items', 'attachments'])->findOrFail($id);
+            $tache = Tache::with(['commentaires', 'subTasks', 'tags', 'assignee', 'checklists.items', 'attachments', 'projet:id,reference_code,name,end_date'])->findOrFail($id);
             Gate::authorize('view', $tache);
 
             return response()->json([

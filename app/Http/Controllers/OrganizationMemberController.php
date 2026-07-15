@@ -115,6 +115,17 @@ class OrganizationMemberController extends Controller
                 ], 403);
             }
 
+            // Prevent downgrading the last admin/owner to a member
+            if (in_array($targetUser->pivot->role, ['admin', 'proprietaire']) && $validated['role'] === 'membre') {
+                $adminCount = $organization->users()->wherePivotIn('role', ['admin', 'proprietaire'])->count();
+                if ($adminCount <= 1) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'L\'organisation doit avoir au moins un administrateur.'
+                    ], 403);
+                }
+            }
+
             // Update the pivot table role
             $organization->users()->updateExistingPivot($userId, [
                 'role' => $validated['role']
@@ -175,6 +186,17 @@ class OrganizationMemberController extends Controller
                     'success' => false,
                     'message' => 'Admins cannot remove an owner.'
                 ], 403);
+            }
+
+            // Prevent removing the last admin/owner
+            if (in_array($targetUser->pivot->role, ['admin', 'proprietaire'])) {
+                $adminCount = $organization->users()->wherePivotIn('role', ['admin', 'proprietaire'])->count();
+                if ($adminCount <= 1) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'L\'organisation doit avoir au moins un administrateur.'
+                    ], 403);
+                }
             }
 
             // Remove the user from the organization
