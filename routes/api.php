@@ -64,7 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('organizations.teams', TeamController::class)->only(['store', 'update', 'destroy'])->middleware('organization.role:proprietaire,admin');
 
     Route::apiResource('organizations.members', OrganizationMemberController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
-    Route::apiResource('organizations.teams.members', TeamMemberController::class)->only(['index', 'update', 'destroy']);
+    Route::apiResource('organizations.teams.members', TeamMemberController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // this handles all the methods for Projets endpoint
     Route::apiResource('projets',ProjetController::class);

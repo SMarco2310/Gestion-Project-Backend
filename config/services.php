@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'custom_oauth' => [
+        'client_id' => env('CUSTOM_OAUTH_CLIENT_ID'),
+        'client_secret' => env('CUSTOM_OAUTH_CLIENT_SECRET'),
+        'redirect' => env('CUSTOM_OAUTH_REDIRECT_URI'),
+        'server_url' => env('CUSTOM_OAUTH_SERVER_URL'),
+    ],
+
 ];

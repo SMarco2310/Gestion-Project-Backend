@@ -41,6 +41,73 @@ class TeamMemberController extends Controller
             ], 500);
         }
     }
+    /**
+     * Add a member to the team.
+     */
+    public function store(Request $request, $organizationId, $teamId)
+    {
+        try {
+            $organization = Organization::findOrFail($organizationId);
+            $team = $organization->teams()->findOrFail($teamId);
+
+            Gate::authorize('update', $team);
+
+            $validated = $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'role' => 'required|in:team_lead,membre',
+            ]);
+
+            // Check if user is part of the organization
+            $isOrgMember = $organization->users()->where('user_id', $validated['user_id'])->exists();
+            if (!$isOrgMember) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User is not a member of this organization.'
+                ], 403);
+            }
+
+            // Check if user is already in the team
+            if ($team->members()->where('user_id', $validated['user_id'])->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User is already a member of this team.'
+                ], 409);
+            }
+
+            $team->members()->attach($validated['user_id'], [
+                'role' => $validated['role']
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Team member added successfully'
+            ], 201);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to add team members.'
+            ], 403);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Organization or Team not found'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error adding team member: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to add team member',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     /**
      * Update the specified resource in storage.
