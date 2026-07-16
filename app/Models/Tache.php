@@ -25,6 +25,7 @@ class Tache extends Model
         'parent_task_id',
         'banner_image',
         'assignee_id',
+        'workspace_id',
         'board_column'
     ];
 
@@ -77,6 +78,11 @@ class Tache extends Model
     public function projet(): BelongsTo
     {
         return $this->belongsTo(Projet::class);
+    }
+
+    public function workspace(): BelongsTo
+    {
+        return $this->belongsTo(Workspace::class);
     }
 
     public function parentTask(): BelongsTo

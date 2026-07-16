@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\OrganizationMemberController;
 use App\Http\Controllers\TeamMemberController;
@@ -58,6 +59,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('organizations', OrganizationController::class)->only(['show'])->middleware('organization.role:proprietaire,admin,membre');
     Route::apiResource('organizations', OrganizationController::class)->only(['update', 'destroy'])->middleware('organization.role:proprietaire,admin');
     Route::put('organizations/{organization}/kanban-columns', [OrganizationController::class, 'updateKanbanColumns'])->middleware('organization.role:proprietaire,admin');
+
+    // Workspaces
+    Route::apiResource('workspaces', WorkspaceController::class);
+    Route::post('workspaces/{id}/members', [WorkspaceController::class, 'addMember']);
+    Route::delete('workspaces/{id}/members/{userId}', [WorkspaceController::class, 'removeMember']);
+    Route::put('workspaces/{id}/kanban-columns', [WorkspaceController::class, 'updateKanbanColumns']);
+    
+    // Workspace Teams
+    Route::get('workspaces/{id}/teams', [\App\Http\Controllers\WorkspaceTeamController::class, 'index']);
+    Route::post('workspaces/{id}/teams', [\App\Http\Controllers\WorkspaceTeamController::class, 'store']);
+    Route::post('workspaces/{id}/teams/attach', [\App\Http\Controllers\WorkspaceTeamController::class, 'attach']);
+    Route::delete('workspaces/{id}/teams/{teamId}', [\App\Http\Controllers\WorkspaceTeamController::class, 'detach']);
 
     // Teams
     Route::apiResource('organizations.teams', TeamController::class)->only(['index', 'show'])->middleware('organization.role:proprietaire,admin,membre');

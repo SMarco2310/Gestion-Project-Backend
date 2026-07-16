@@ -18,13 +18,10 @@ class Organization extends Model
         'reminder_days_before_end',
         'reminder_time_start',
         'reminder_time_end',
-        'kanban_columns',
-        'kanban_colors',
     ];
 
     protected $casts = [
-        'kanban_columns' => 'array',
-        'kanban_colors' => 'array',
+        //
     ];
 
     public function users()
@@ -50,6 +47,11 @@ class Organization extends Model
     public function projets()
     {
         return $this->hasMany(Projet::class);
+    }
+
+    public function workspaces()
+    {
+        return $this->hasMany(Workspace::class);
     }
 }
 

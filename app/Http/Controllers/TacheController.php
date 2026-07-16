@@ -82,8 +82,8 @@ class TacheController extends Controller
                       });
                 });
 
-            if ($request->has('organization_id')) {
-                $projetQuery->where('organization_id', $request->query('organization_id'));
+            if ($request->has('workspace_id')) {
+                $projetQuery->where('workspace_id', $request->query('workspace_id'));
             }
 
             $accessibleProjectIds = $projetQuery->pluck('id');

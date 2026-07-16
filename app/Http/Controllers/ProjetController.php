@@ -32,8 +32,8 @@ class ProjetController extends Controller
                   });
             });
 
-            if ($request->has('organization_id')) {
-                $query->where('organization_id', $request->query('organization_id'));
+            if ($request->has('workspace_id')) {
+                $query->where('workspace_id', $request->query('workspace_id'));
             }
 
             $projets = $query->with(['taches', 'users', 'teams.members', 'user'])->get();

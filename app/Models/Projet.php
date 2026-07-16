@@ -22,7 +22,7 @@ class Projet extends Model
         'start_date',
         'end_date',
         'user_id',
-        'organization_id',
+        'workspace_id',
         'is_archived'
     ];
 
@@ -64,6 +64,11 @@ class Projet extends Model
     public function organization()
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function workspace()
+    {
+        return $this->belongsTo(Workspace::class);
     }
 
     public function user(){

@@ -34,4 +34,9 @@ class Team extends Model
     {
         return $this->belongsToMany(Projet::class, 'projet_team')->withTimestamps();
     }
+
+    public function workspaces()
+    {
+        return $this->belongsToMany(Workspace::class, 'team_workspace')->withTimestamps();
+    }
 }
