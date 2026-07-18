@@ -42,6 +42,11 @@ class WorkspaceTeamController extends Controller
         try {
             $workspace = Workspace::findOrFail($workspaceId);
             
+            // Check if user is an admin of the workspace
+            if (!$workspace->users()->where('users.id', $request->user()->id)->wherePivot('role', 'admin')->exists()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized: Only workspace admins can manage teams'], 403);
+            }
+            
             $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
@@ -92,6 +97,10 @@ class WorkspaceTeamController extends Controller
         try {
             $workspace = Workspace::findOrFail($workspaceId);
             
+            if (!$workspace->users()->where('users.id', $request->user()->id)->wherePivot('role', 'admin')->exists()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized: Only workspace admins can manage teams'], 403);
+            }
+            
             $request->validate([
                 'team_id' => 'required|uuid|exists:teams,id',
             ]);
@@ -136,6 +145,11 @@ class WorkspaceTeamController extends Controller
     {
         try {
             $workspace = Workspace::findOrFail($workspaceId);
+            
+            if (!$workspace->users()->where('users.id', request()->user()->id)->wherePivot('role', 'admin')->exists()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized: Only workspace admins can manage teams'], 403);
+            }
+            
             $workspace->teams()->detach($teamId);
             
             return response()->json([

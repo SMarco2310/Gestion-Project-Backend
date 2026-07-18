@@ -18,7 +18,7 @@ class OrganizationController extends Controller
     public function index(Request $request)
     {
         try {
-            $organizations = $request->user()->organizations()->get();
+            $organizations = $request->user()->organizations()->withCount(['users', 'workspaces'])->get();
             
             return response()->json([
                 'success' => true,
@@ -235,61 +235,5 @@ class OrganizationController extends Controller
         }
     }
 
-    /**
-     * Update Kanban columns for the organization.
-     */
-    public function updateKanbanColumns(Request $request, Organization $organization)
-    {
-        try {
-            Gate::authorize('update', $organization);
 
-            $request->validate([
-                'kanban_columns' => 'required|array',
-                'kanban_colors' => 'nullable|array',
-                'renames' => 'nullable|array', // key: old name, value: new name
-            ]);
-
-            // If there are renames, we need to update the statuses of all tasks in this organization
-            if ($request->has('renames') && is_array($request->renames)) {
-                foreach ($request->renames as $oldName => $newName) {
-                    \App\Models\Tache::whereHas('projet', function ($query) use ($organization) {
-                        $query->where('organization_id', $organization->id);
-                    })->where('status', $oldName)->update(['status' => $newName]);
-                }
-            }
-
-            $updateData = ['kanban_columns' => $request->kanban_columns];
-            if ($request->has('kanban_colors')) {
-                $updateData['kanban_colors'] = $request->kanban_colors;
-            }
-
-            $organization->update($updateData);
-            $freshOrg = $organization->fresh();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Kanban columns updated successfully',
-                'kanban_columns' => $freshOrg->kanban_columns,
-                'kanban_colors' => $freshOrg->kanban_colors
-            ], 200);
-        } catch (AuthorizationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to update this organization'
-            ], 403);
-        } catch (ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Kanban columns update error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update Kanban columns',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
 }

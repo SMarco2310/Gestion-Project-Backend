@@ -126,6 +126,9 @@ class TacheController extends Controller
             $projet = Projet::findOrFail($validated['projet_id']);
             Gate::authorize('view', $projet);
 
+            // Automatically inherit the workspace_id from the parent project
+            $validated['workspace_id'] = $projet->workspace_id;
+
             $tache = $projet->taches()->create($validated);
 
             if (isset($validated['tag_ids'])) {

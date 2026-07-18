@@ -15,7 +15,35 @@ class Team extends Model
         'organization_id', 
         'name',
         'description',
+        'reference_code',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $prefix = 'EQ-';
+            $paddingLength = 2; 
+
+            // Scope the query to THIS specific organization
+            $lastRecord = static::where('organization_id', $model->organization_id)
+                                ->latest('created_at')
+                                ->first();
+
+            if (! $lastRecord || ! $lastRecord->reference_code) {
+                // It is this organization's very first team
+                $model->reference_code = $prefix . str_pad(1, $paddingLength, '0', STR_PAD_LEFT);
+            } else {
+                // Extract the number from this organization's last team
+                $lastNumber = (int) substr($lastRecord->reference_code, strlen($prefix));
+                $newNumber = $lastNumber + 1;
+                
+                // Assign the new reference code
+                $model->reference_code = $prefix . str_pad($newNumber, $paddingLength, '0', STR_PAD_LEFT);
+            }
+        });
+    }
     
     public function organization()
     {

@@ -30,6 +30,7 @@ class StoreProjetRequest extends FormRequest
             'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'organization_id' => ['required', 'exists:organizations,id'],
+            'workspace_id' => ['required', 'exists:workspaces,id'],
             'team_ids' => ['nullable', 'array'],
             'team_ids.*' => ['exists:teams,id'],
             'user_ids' => ['nullable', 'array'],

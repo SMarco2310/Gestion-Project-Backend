@@ -18,6 +18,7 @@ class TeamController extends Controller
     {
         try {
             $organization = Organization::findOrFail($organizationId);
+            Gate::authorize('view', $organization);
             $teams = $organization->teams()->with('members')->withCount('members')->get();
             
             return response()->json([
@@ -47,6 +48,7 @@ class TeamController extends Controller
     {
         try {
             $organization = Organization::findOrFail($organizationId);
+            Gate::authorize('update', $organization);
             
             $request->validate([
                 'name' => 'required|string|max:255',

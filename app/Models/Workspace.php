@@ -17,6 +17,7 @@ class Workspace extends Model
         'kanban_columns',
         'kanban_colors',
         'created_by',
+        'color',
     ];
 
     protected $casts = [

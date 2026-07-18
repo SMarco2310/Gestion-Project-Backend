@@ -1,28 +1,17 @@
 <?php
-require __DIR__.'/vendor/autoload.php';
-$app = require_once __DIR__.'/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
+require __DIR__ . '/vendor/autoload.php';
+$app = require_once __DIR__ . '/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 
-$user = \App\Models\User::first();
-$projet = \App\Models\Projet::first();
+$user = App\Models\User::first();
+auth()->login($user);
 
-$request = \Illuminate\Http\Request::create('/api/projets/' . $projet->id, 'PUT', [
-    'name' => 'Updated Name',
-    'color' => 'rose',
-    'status' => 'en cours'
+$request = Illuminate\Http\Request::create('/api/projets/1', 'PUT', [
+    'name' => 'Test',
+    'status' => 'à faire',
+    'team_ids' => [],
+    'user_ids' => []
 ]);
-$request->setUserResolver(function () use ($user) {
-    return $user;
-});
-
-app()->instance('request', $request);
-
-try {
-    $controller = new \App\Http\Controllers\ProjetController();
-    // we can't easily mock the form request. Let's just update the DB directly to see if color works.
-    $projet->update(['color' => 'slate']);
-    echo "Color is now: " . $projet->color . "\n";
-} catch (\Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
-}
+$request->headers->set('Accept', 'application/json');
+$response = $kernel->handle($request);
+echo $response->getContent();

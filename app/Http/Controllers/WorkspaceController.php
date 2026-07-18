@@ -19,7 +19,7 @@ class WorkspaceController extends Controller
                 $query->where('organization_id', $request->query('organization_id'));
             }
 
-            $workspaces = $query->with('organization:id,name,logo')->get();
+            $workspaces = $query->withCount(['users', 'projets'])->with('organization:id,name,logo')->get();
 
             return response()->json([
                 'success' => true,
@@ -39,6 +39,7 @@ class WorkspaceController extends Controller
             'organization_id' => 'required|exists:organizations,id',
             'kanban_columns' => 'nullable|array',
             'kanban_colors' => 'nullable|array',
+            'color' => 'nullable|string',
         ]);
 
         try {
@@ -60,6 +61,12 @@ class WorkspaceController extends Controller
             
             // Add creator to workspace
             $workspace->users()->attach($user->id, ['role' => 'admin']);
+
+            // Notify organization members about the new workspace
+            $orgUsers = $org->users()->where('users.id', '!=', $user->id)->get();
+            foreach ($orgUsers as $orgUser) {
+                $orgUser->notify(new \App\Notifications\WorkspaceCreatedNotification($workspace, $user));
+            }
 
             return response()->json(['success' => true, 'workspace' => $workspace], 201);
         } catch (\Exception $e) {
@@ -91,6 +98,7 @@ class WorkspaceController extends Controller
             'description' => 'nullable|string',
             'kanban_columns' => 'nullable|array',
             'kanban_colors' => 'nullable|array',
+            'color' => 'nullable|string',
         ]);
 
         try {
@@ -147,6 +155,11 @@ class WorkspaceController extends Controller
             $workspace->users()->syncWithoutDetaching([
                 $validated['user_id'] => ['role' => $validated['role'] ?? 'member']
             ]);
+
+            $addedUser = \App\Models\User::find($validated['user_id']);
+            if ($addedUser && $addedUser->id !== $request->user()->id) {
+                $addedUser->notify(new \App\Notifications\WorkspaceAddedNotification($workspace, $request->user()));
+            }
 
             return response()->json(['success' => true, 'message' => 'Member added successfully'], 200);
         } catch (\Exception $e) {

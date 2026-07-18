@@ -207,6 +207,11 @@ class OrganizationMemberController extends Controller
             $teamIds = $organization->teams()->pluck('id');
             $targetUser->teams()->detach($teamIds);
 
+            // SECURITY FIX: Remove them from any workspaces within this organization
+            // Workspaces are scoped to the organization, so we must detach them to prevent unauthorized access
+            $workspaceIds = $organization->workspaces()->pluck('id');
+            $targetUser->workspaces()->detach($workspaceIds);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Member removed successfully'

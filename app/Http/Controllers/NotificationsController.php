@@ -13,7 +13,7 @@ class NotificationsController extends Controller
     public function index(Request $request)
     {
         try {
-            $notifications = $request->user()->notifications()->latest()->get();
+            $notifications = $request->user()->unreadNotifications()->latest()->take(50)->get();
             return response()->json([
                 'success' => true,
                 'message' => 'Notifications retrieved successfully',
@@ -35,7 +35,7 @@ class NotificationsController extends Controller
     public function all(Request $request)
     {
         try {
-            $notifications = $request->user()->notifications()->latest()->get();
+            $notifications = $request->user()->notifications()->latest()->take(100)->get();
             return response()->json([
                 'success' => true,
                 'message' => 'Notifications retrieved successfully',
