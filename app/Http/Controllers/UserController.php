@@ -73,6 +73,10 @@ class UserController extends Controller
                 'last_name' => 'sometimes|required|string|max:255',
                 'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
                 'bio' => 'sometimes|nullable|string|max:500',
+                'reminder_days_before_start' => 'sometimes|nullable|integer|min:0',
+                'reminder_time_start' => 'sometimes|nullable|string',
+                'reminder_days_before_end' => 'sometimes|nullable|integer|min:0',
+                'reminder_time_end' => 'sometimes|nullable|string',
             ]);
 
             $user->update($validated);
@@ -137,10 +141,11 @@ class UserController extends Controller
     public function profile(Request $request)
     {
         try {
+            $user = $request->user()->load('teams');
             return response()->json([
                 'success' => true,
                 'message' => 'Profile retrieved successfully',
-                'user' => $request->user()
+                'user' => $user
             ], 200);
         } catch (\Exception $e) {
             Log::error('Error fetching profile: ' . $e->getMessage());
@@ -158,11 +163,11 @@ class UserController extends Controller
     public function show($id)
     {
         try {
-            $user = User::findOrFail($id);
+            $user = User::with('teams')->findOrFail($id);
             return response()->json([
                 'success' => true,
                 'message' => 'User retrieved successfully',
-                'user' => $user->only(['id', 'first_name', 'last_name', 'email', 'profile_picture'])
+                'user' => $user->only(['id', 'first_name', 'last_name', 'email', 'profile_picture', 'teams', 'created_at'])
             ], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([

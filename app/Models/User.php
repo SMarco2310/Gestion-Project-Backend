@@ -14,7 +14,7 @@ use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['first_name', 'last_name', 'phone', 'provider_id', 'email','bio', 'password', 'profile_picture'])]
+#[Fillable(['first_name', 'last_name', 'phone', 'provider_id', 'email','bio', 'password', 'profile_picture', 'reminder_days_before_start', 'reminder_time_start', 'reminder_days_before_end', 'reminder_time_end'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
