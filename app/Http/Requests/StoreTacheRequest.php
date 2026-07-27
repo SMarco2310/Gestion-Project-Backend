@@ -16,6 +16,19 @@ class StoreTacheRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('tag_id') && !$this->has('tag_ids')) {
+            $tagId = $this->input('tag_id');
+            $this->merge([
+                'tag_ids' => $tagId ? [$tagId] : []
+            ]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>

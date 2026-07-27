@@ -14,6 +14,7 @@ class Organization extends Model
         'name',
         'description',
         'logo',
+        'primary_color',
         'reminder_days_before_start',
         'reminder_days_before_end',
         'reminder_time_start',

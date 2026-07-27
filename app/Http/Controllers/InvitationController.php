@@ -25,17 +25,36 @@ class InvitationController extends Controller
                 'organization_id' => 'required|exists:organizations,id',
                 'team_id' => 'nullable|exists:teams,id',
                 'projet_id' => 'nullable|exists:projets,id',
-                'role' => 'nullable|in:admin,member,membre,proprietaire',
+                'role' => 'nullable|in:admin,member,membre,proprietaire,owner',
             ]);
 
-            // Ensure the user has permission to invite (must be proprietaire or admin)
-            $orgUser = auth()->user()->organizations()->where('organization_id', $validated['organization_id'])->first();
+            $user = $request->user();
             
-            if (!$orgUser || !in_array($orgUser->pivot->role, ['proprietaire', 'admin'])) {
+            // Check permission: owner/admin/proprietaire of organization or organization creator
+            $orgUser = $user->organizations()->where('organizations.id', $validated['organization_id'])->first();
+            $allowedRoles = ['proprietaire', 'owner', 'admin', 'creator', 'propriétaire'];
+            $hasPerm = ($orgUser && in_array(strtolower($orgUser->pivot->role ?? ''), $allowedRoles)) ||
+                       Organization::where('id', $validated['organization_id'])->where('user_id', $user->id)->exists();
+
+            if (!$hasPerm) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You do not have permission to send invitations for this organization.'
                 ], 403);
+            }
+
+            // Check if user is already a member of this organization
+            $alreadyMember = User::where('email', $validated['email'])
+                ->whereHas('organizations', function($q) use ($validated) {
+                    $q->where('organizations.id', $validated['organization_id']);
+                })
+                ->exists();
+
+            if ($alreadyMember) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cet utilisateur est déjà membre de cette organisation.'
+                ], 422);
             }
 
             // Generate token and set expiration to 2 days
@@ -46,25 +65,34 @@ class InvitationController extends Controller
             if ($inputRole === 'membre') $inputRole = 'member';
             if ($inputRole === 'proprietaire') $inputRole = 'owner';
 
-            $invitation = Invitation::create([
-                'email' => $validated['email'],
-                'token' => $token,
-                'organization_id' => $validated['organization_id'],
-                'team_id' => $validated['team_id'] ?? null,
-                'projet_id' => $validated['projet_id'] ?? null,
-                'role' => $inputRole,
-                'status' => 'pending',
-                'expires_at' => $expiresAt,
-                'invited_by' => auth()->id(),
-            ]);
+            // Create or update pending invitation
+            $invitation = Invitation::updateOrCreate(
+                [
+                    'email' => $validated['email'],
+                    'organization_id' => $validated['organization_id'],
+                    'status' => 'pending',
+                ],
+                [
+                    'token' => $token,
+                    'team_id' => $validated['team_id'] ?? null,
+                    'projet_id' => $validated['projet_id'] ?? null,
+                    'role' => $inputRole,
+                    'expires_at' => $expiresAt,
+                    'invited_by' => $user->id,
+                ]
+            );
 
-            // Notify the user via email and database if they exist
-            $invitedUser = User::where('email', $validated['email'])->first();
-            if ($invitedUser) {
-                $invitedUser->notify(new OrganizationInvitationNotification($invitation));
-            } else {
-                Notification::route('mail', $validated['email'])
-                    ->notify(new OrganizationInvitationNotification($invitation));
+            // Safely attempt to notify the user via mail/database without crashing if mail server fails
+            try {
+                $invitedUser = User::where('email', $validated['email'])->first();
+                if ($invitedUser) {
+                    $invitedUser->notify(new OrganizationInvitationNotification($invitation));
+                } else {
+                    Notification::route('mail', $validated['email'])
+                        ->notify(new OrganizationInvitationNotification($invitation));
+                }
+            } catch (\Throwable $mailErr) {
+                Log::warning('Invitation created, but notification email could not be sent: ' . $mailErr->getMessage());
             }
 
             return response()->json([
@@ -82,7 +110,7 @@ class InvitationController extends Controller
             Log::error('Error sending invitation: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to send invitation',
+                'message' => $e->getMessage() ?: 'Failed to send invitation',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -140,7 +168,7 @@ class InvitationController extends Controller
                 ], 400);
             }
 
-            $user = auth()->user();
+            $user = $request->user();
 
             // Check if the authenticated user's email matches the invite
             if ($user->email !== $invitation->email) {

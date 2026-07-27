@@ -24,7 +24,11 @@ class OrganizationMemberController extends Controller
         try {
             $organization = Organization::findOrFail($organizationId);
             $members = $organization->users()->get()->map(function ($member) {
-                return $member->only(['id', 'first_name', 'last_name', 'email', 'profile_picture']);
+                $data = $member->only(['id', 'first_name', 'last_name', 'email', 'profile_picture']);
+                if ($member->pivot) {
+                    $data['pivot'] = $member->pivot;
+                }
+                return $data;
             });
             
             return response()->json([
@@ -105,7 +109,7 @@ class OrganizationMemberController extends Controller
             // Ensure the target user is actually in the organization
             $targetUser = $organization->users()->where('user_id', $userId)->firstOrFail();
 
-            $currentUserOrg = auth()->user()->organizations()->where('organization_id', $organizationId)->first();
+            $currentUserOrg = $request->user()->organizations()->where('organization_id', $organizationId)->first();
             
             // Prevent changing the role of a proprietaire if the current user is only an admin
             if ($targetUser->pivot->role === 'proprietaire' && $currentUserOrg->pivot->role === 'admin') {
@@ -171,7 +175,7 @@ class OrganizationMemberController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($organizationId, $userId)
+    public function destroy(Request $request, $organizationId, $userId)
     {
         try {
             $organization = Organization::findOrFail($organizationId);
@@ -179,7 +183,7 @@ class OrganizationMemberController extends Controller
             Gate::authorize('update', $organization);
 
             $targetUser = $organization->users()->where('user_id', $userId)->firstOrFail();
-            $currentUserOrg = auth()->user()->organizations()->where('organization_id', $organizationId)->first();
+            $currentUserOrg = $request->user()->organizations()->where('organization_id', $organizationId)->first();
 
             if ($targetUser->pivot->role === 'proprietaire' && $currentUserOrg->pivot->role === 'admin') {
                 return response()->json([

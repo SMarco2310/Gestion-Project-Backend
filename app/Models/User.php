@@ -39,7 +39,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getNameAttribute()
     {
-        return trim("{$this->first_name} {$this->last_name}");
+        return trim("{$this->last_name} {$this->first_name}");
     }
 
     /**

@@ -60,12 +60,13 @@ class TeamController extends Controller
                 'description' => $request->description,
             ]);
 
-            $team->members()->attach(auth()->id(), [
+            $user = $request->user();
+            $team->members()->attach($user->id, [
                 'joined_at' => now(),
             ]);
 
             // Notify the creator they've been added to the team
-            auth()->user()->notify(new TeamAddedNotification($team, $organization));
+            $user->notify(new TeamAddedNotification($team, $organization));
 
             return response()->json([
                 'success' => true,

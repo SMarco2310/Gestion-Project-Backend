@@ -14,7 +14,13 @@ class TachePolicy
 
     public function view(User $user, Tache $tache): bool
     {
-        return $user->can('view', $tache->projet);
+        if ($tache->assignee_id === $user->id) {
+            return true;
+        }
+        if ($tache->projet) {
+            return $user->can('view', $tache->projet);
+        }
+        return true;
     }
 
     public function create(User $user): bool
@@ -24,12 +30,24 @@ class TachePolicy
 
     public function update(User $user, Tache $tache): bool
     {
-        return $user->can('update', $tache->projet);
+        if ($tache->assignee_id === $user->id) {
+            return true;
+        }
+        if ($tache->projet) {
+            return $user->can('update', $tache->projet);
+        }
+        return true;
     }
 
     public function delete(User $user, Tache $tache): bool
     {
-        return $user->can('update', $tache->projet);
+        if ($tache->assignee_id === $user->id) {
+            return true;
+        }
+        if ($tache->projet) {
+            return $user->can('update', $tache->projet);
+        }
+        return true;
     }
 
     public function restore(User $user, Tache $tache): bool

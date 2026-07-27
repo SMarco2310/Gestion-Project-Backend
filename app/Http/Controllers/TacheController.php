@@ -79,6 +79,12 @@ class TacheController extends Controller
                       })
                       ->orWhereHas('users', function ($q3) use ($user) {
                           $q3->where('users.id', $user->id);
+                      })
+                      ->orWhereHas('organization.users', function ($q4) use ($user) {
+                          $q4->where('users.id', $user->id);
+                      })
+                      ->orWhereHas('workspace.users', function ($q5) use ($user) {
+                          $q5->where('users.id', $user->id);
                       });
                 });
 
@@ -88,7 +94,10 @@ class TacheController extends Controller
 
             $accessibleProjectIds = $projetQuery->pluck('id');
 
-            $query = Tache::whereIn('projet_id', $accessibleProjectIds);
+            $query = Tache::where(function($q) use ($accessibleProjectIds, $user) {
+                $q->whereIn('projet_id', $accessibleProjectIds)
+                  ->orWhere('assignee_id', $user->id);
+            });
 
             if ($request->has('projet_id')) {
                 if ($accessibleProjectIds->contains($request->query('projet_id'))) {
@@ -148,7 +157,7 @@ class TacheController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Task created successfully',
-                'tache' => $tache->fresh(['tags', 'assignee'])->loadCount('commentaires')
+                'tache' => $tache->fresh(['tags', 'assignee', 'projet:id,reference_code,name,end_date'])->loadCount('commentaires')
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
@@ -298,7 +307,7 @@ class TacheController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Task updated successfully',
-                'tache' => $tach->fresh(['tags', 'assignee'])->loadCount('commentaires')
+                'tache' => $tach->fresh(['tags', 'assignee', 'projet:id,reference_code,name,end_date'])->loadCount('commentaires')
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
@@ -379,7 +388,7 @@ class TacheController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Banner uploaded successfully',
-                'tache' => $tach->fresh(['tags', 'assignee'])->loadCount('commentaires')
+                'tache' => $tach->fresh(['tags', 'assignee', 'projet:id,reference_code,name,end_date'])->loadCount('commentaires')
             ], 200);
         } catch (ValidationException $e) {
             return response()->json([

@@ -45,6 +45,7 @@ class OrganizationController extends Controller
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'logo' => 'nullable|string',
+                'primary_color' => 'nullable|string|max:20',
                 'reminder_days_before_start' => 'nullable|integer|min:0',
                 'reminder_days_before_end' => 'nullable|integer|min:0',
                 'reminder_time_start' => 'nullable|date_format:H:i',
@@ -55,13 +56,15 @@ class OrganizationController extends Controller
                 'name' => $request->name,
                 'description' => $request->description,
                 'logo' => $request->logo,
+                'primary_color' => $request->primary_color ?? '#0B0E11',
                 'reminder_days_before_start' => $request->reminder_days_before_start ?? 2,
                 'reminder_days_before_end' => $request->reminder_days_before_end ?? 2,
                 'reminder_time_start' => $request->reminder_time_start ?? '08:00:00',
                 'reminder_time_end' => $request->reminder_time_end ?? '08:00:00',
             ]);
 
-            $organization->users()->attach(auth()->id(), [
+            $user = $request->user();
+            $organization->users()->attach($user->id, [
                 'role' => 'proprietaire',
                 'joined_at' => now(),
             ]);
@@ -129,13 +132,14 @@ class OrganizationController extends Controller
                 'name' => 'sometimes|required|string|max:255',
                 'description' => 'nullable|string',
                 'logo' => 'nullable|string',
+                'primary_color' => 'nullable|string|max:20',
                 'reminder_days_before_start' => 'nullable|integer|min:0',
                 'reminder_days_before_end' => 'nullable|integer|min:0',
                 'reminder_time_start' => 'nullable|date_format:H:i',
                 'reminder_time_end' => 'nullable|date_format:H:i',
             ]);
 
-            $organization->update($request->only(['name', 'description', 'logo', 'reminder_days_before_start', 'reminder_days_before_end', 'reminder_time_start', 'reminder_time_end']));
+            $organization->update($request->only(['name', 'description', 'logo', 'primary_color', 'reminder_days_before_start', 'reminder_days_before_end', 'reminder_time_start', 'reminder_time_end']));
 
             return response()->json([
                 'success' => true,

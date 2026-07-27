@@ -141,6 +141,20 @@ class ProjetController extends Controller
 
             $validated = $request->validated();
 
+            if (isset($validated['status']) && strtolower($validated['status']) === 'terminé' && strtolower($projet->status) !== 'terminé') {
+                $hasIncompleteTasks = $projet->taches()->where(function($query) {
+                    $query->whereNotIn('status', ['terminé', 'done'])
+                          ->orWhereNull('status');
+                })->exists();
+
+                if ($hasIncompleteTasks) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Toutes les tâches doivent être terminées avant de clôturer le projet.'
+                    ], 422);
+                }
+            }
+
             if (isset($validated['team_ids'])) {
                 $projet->teams()->sync($validated['team_ids']);
                 unset($validated['team_ids']);

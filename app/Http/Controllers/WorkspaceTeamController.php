@@ -58,7 +58,8 @@ class WorkspaceTeamController extends Controller
                 'description' => $request->description,
             ]);
 
-            $team->members()->attach(auth()->id(), [
+            $user = $request->user();
+            $team->members()->attach($user->id, [
                 'joined_at' => now(),
             ]);
 
@@ -66,7 +67,7 @@ class WorkspaceTeamController extends Controller
             $workspace->teams()->attach($team->id);
 
             // Notify the creator they've been added to the team
-            auth()->user()->notify(new TeamAddedNotification($team, $workspace->organization));
+            $user->notify(new TeamAddedNotification($team, $workspace->organization));
 
             $team->load('members');
             $team->loadCount('members');

@@ -23,6 +23,14 @@ class ProjetPolicy
             return true;
         }
 
+        if ($projet->organization_id && $user->organizations()->where('organizations.id', $projet->organization_id)->exists()) {
+            return true;
+        }
+
+        if ($projet->workspace_id && $user->workspaces()->where('workspaces.id', $projet->workspace_id)->exists()) {
+            return true;
+        }
+
         return false;
     }
 
