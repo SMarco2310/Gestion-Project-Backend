@@ -42,4 +42,10 @@ return [
         'server_url' => env('CUSTOM_OAUTH_SERVER_URL'),
     ],
 
+    'klea' => [
+        'api_key' => env('KLEA_API_KEY'),
+        'base_url' => env('KLEA_BASE_URL', 'http://localhost:8000/api'),
+        'webhook_secret' => env('KLEA_WEBHOOK_SECRET'),
+    ],
+
 ];
