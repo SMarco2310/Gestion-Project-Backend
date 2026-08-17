@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Notifications\WelcomeNotification;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Auth\Events\Registered;
 
@@ -22,7 +23,7 @@ class AuthController extends Controller
                 'first_name' => 'required|string|max:255',
                 'last_name'  => 'required|string|max:255',
                 'email'    => 'required|email|unique:users,email',
-                'password' => 'required|string|min:8',
+                'password' => ['required', 'string', Password::min(8)->mixedCase()->numbers()->symbols()],
             ]);
 
             $user = User::create([
