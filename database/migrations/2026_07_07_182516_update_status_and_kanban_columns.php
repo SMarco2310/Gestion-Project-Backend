@@ -15,8 +15,12 @@ return new class extends Migration
             $table->json('kanban_columns')->nullable();
         });
 
-        // Use raw SQL to modify the ENUM to VARCHAR safely without doctrine/dbal
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE taches MODIFY status VARCHAR(255) DEFAULT 'à faire'");
+        // Use raw SQL to modify the ENUM to VARCHAR safely without doctrine/dbal.
+        // MODIFY is MySQL-only syntax; SQLite is dynamically typed and has no ENUM,
+        // so the column already accepts these values and needs no alteration there.
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE taches MODIFY status VARCHAR(255) DEFAULT 'à faire'");
+        }
     }
 
     /**
