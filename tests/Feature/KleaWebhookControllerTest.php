@@ -45,6 +45,34 @@ class KleaWebhookControllerTest extends TestCase
         $response->assertStatus(401);
     }
 
+    public function test_rejects_when_webhook_secret_is_not_configured()
+    {
+        Config::set('services.klea.webhook_secret', '');
+
+        $org = Organization::factory()->create();
+        $payload = [
+            'event' => 'subscription.payment_result',
+            'status' => 'successful',
+            'subscription_id' => 1,
+            'subscriber_external_id' => $org->id,
+            'plan_id' => 1,
+            'features' => [],
+            'transaction' => ['id' => 100, 'amount' => 15000, 'currency' => 'XOF'],
+        ];
+
+        // What an attacker could produce themselves: HMAC computed with an empty key.
+        $forgedSignature = hash_hmac('sha256', (string) $payload['transaction']['id'], '');
+
+        $response = $this->postJson('/api/webhooks/klea', $payload, ['X-Klea-Signature' => $forgedSignature]);
+
+        $response->assertStatus(401);
+
+        $this->assertDatabaseMissing('organization_entitlements', [
+            'organization_id' => $org->id,
+            'status' => 'active',
+        ]);
+    }
+
     public function test_rejects_invalid_signature()
     {
         $org = Organization::factory()->create();

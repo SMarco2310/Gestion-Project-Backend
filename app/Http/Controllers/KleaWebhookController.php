@@ -19,10 +19,20 @@ class KleaWebhookController extends Controller
         $payload = $request->all();
         $signature = $request->header('X-Klea-Signature');
 
+        $secret = config('services.klea.webhook_secret');
+
+        if (empty($secret)) {
+            // Fail closed: an empty/unset secret would make the HMAC below
+            // computable by anyone (empty-key HMAC), granting free paid
+            // access. This is a misconfiguration, not a bad signature.
+            Log::error('Klea webhook secret is not configured; rejecting webhook');
+            return response()->json(['success' => false, 'message' => 'Invalid signature'], 401);
+        }
+
         // HMAC is over the transaction ID only, not the JSON body — this is
         // the exact scheme Klea's SemoaCallbackController::notifyExternalApp() uses.
         $transactionId = (string) ($payload['transaction']['id'] ?? '');
-        $expected = hash_hmac('sha256', $transactionId, config('services.klea.webhook_secret') ?? '');
+        $expected = hash_hmac('sha256', $transactionId, $secret);
 
         if (! $signature || ! hash_equals($expected, $signature)) {
             Log::warning('Klea webhook signature mismatch', ['payload' => $payload]);
