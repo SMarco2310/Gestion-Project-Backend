@@ -19,6 +19,7 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\OAuthController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\KleaWebhookController;
 /**
  * Public endpoits
  */
@@ -32,6 +33,9 @@ Route::post('/auth/custom/link-account', [OAuthController::class, 'linkAccount']
 
 // Public plan catalog (pricing page)
 Route::get('/public-plans', [SubscriptionController::class, 'plans']);
+
+// Klea payment webhook (public — caller is Klea's server, signature-verified inside)
+Route::post('/webhooks/klea', [KleaWebhookController::class, 'handle']);
 
 // Email verification (public access via signed url)
 Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
