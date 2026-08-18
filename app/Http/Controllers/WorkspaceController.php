@@ -50,6 +50,18 @@ class WorkspaceController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
             }
 
+            $gate = app(\App\Services\FeatureGate::class);
+            $limit = $gate->limit($org, 'max_workspaces');
+
+            if ($limit !== null && $org->workspaces()->count() >= $limit) {
+                return response()->json([
+                    'success' => false,
+                    'upgrade_required' => true,
+                    'feature' => 'max_workspaces',
+                    'message' => 'Workspace limit reached for your current plan.',
+                ], 422);
+            }
+
             $validated['created_by'] = $user->id;
             
             // Default kanban columns if not provided
