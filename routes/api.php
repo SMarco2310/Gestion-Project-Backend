@@ -18,6 +18,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\OAuthController;
+use App\Http\Controllers\SubscriptionController;
 /**
  * Public endpoits
  */
@@ -28,6 +29,9 @@ Route::post('/login',[AuthController::class,'login']);
 Route::get('/auth/custom/redirect', [OAuthController::class, 'redirect']);
 Route::get('/auth/custom/callback', [OAuthController::class, 'callback']);
 Route::post('/auth/custom/link-account', [OAuthController::class, 'linkAccount']);
+
+// Public plan catalog (pricing page)
+Route::get('/public-plans', [SubscriptionController::class, 'plans']);
 
 // Email verification (public access via signed url)
 Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
@@ -59,6 +63,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('organizations', OrganizationController::class)->only(['show'])->middleware('organization.role:proprietaire,admin,membre');
     Route::apiResource('organizations', OrganizationController::class)->only(['update', 'destroy'])->middleware('organization.role:proprietaire,admin');
 
+    // Billing / subscription
+    Route::post('organizations/{organization}/subscribe', [SubscriptionController::class, 'subscribe'])->middleware('organization.role:proprietaire,admin');
+    Route::get('organizations/{organization}/entitlement', [SubscriptionController::class, 'entitlement'])->middleware('organization.role:proprietaire,admin,membre');
 
     // Workspaces
     Route::apiResource('workspaces', WorkspaceController::class);
