@@ -35,7 +35,6 @@ class SubscriptionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch plans',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -55,14 +54,18 @@ class SubscriptionController extends Controller
                 $request->phone_number
             );
 
-            OrganizationEntitlement::updateOrCreate(
-                ['organization_id' => $organization->id],
-                [
-                    'klea_subscription_id' => $result['subscription_id'],
-                    'klea_plan_id' => (int) $request->plan_id,
-                    'status' => 'pending',
-                ]
-            );
+            $entitlement = OrganizationEntitlement::firstOrNew(['organization_id' => $organization->id]);
+
+            $entitlement->klea_subscription_id = $result['subscription_id'];
+            $entitlement->klea_plan_id = (int) $request->plan_id;
+
+            // Only claim 'pending' when there is no live entitlement to protect — a renewal
+            // or upgrade must not revoke the current plan before the new payment settles.
+            if (! $entitlement->exists || ! $entitlement->isActive()) {
+                $entitlement->status = 'pending';
+            }
+
+            $entitlement->save();
 
             return response()->json([
                 'success' => true,
@@ -80,7 +83,6 @@ class SubscriptionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create subscription',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -93,10 +95,10 @@ class SubscriptionController extends Controller
             $active = $entitlement && $entitlement->isActive();
 
             $data = [
-                'status' => $entitlement->status ?? 'active', // no row = permanently-active Free tier
+                'status' => $entitlement ? ($entitlement->isActive() ? 'active' : $entitlement->status) : 'active', // no row = permanently-active Free tier
                 'plan_name' => $active ? ($entitlement->plan_name ?? 'Paid') : 'Free',
                 'features' => $active ? $entitlement->features : null,
-                'expires_at' => $entitlement->expires_at ?? null,
+                'expires_at' => $active ? $entitlement->expires_at : null,
                 'usage' => [
                     'workspaces' => $organization->workspaces()->count(),
                     'members' => $organization->users()->count(),
@@ -119,7 +121,6 @@ class SubscriptionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch entitlement',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }

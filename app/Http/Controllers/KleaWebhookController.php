@@ -49,6 +49,37 @@ class KleaWebhookController extends Controller
         $status = $payload['status'] ?? 'pending';
 
         if ($status === 'successful') {
+            $entitlement = OrganizationEntitlement::where('organization_id', $organization->id)->first();
+
+            // Bind the transaction to the org that initiated it — the HMAC only covers
+            // transaction.id, so a captured (transaction_id, signature) pair could
+            // otherwise be replayed with a different subscriber_external_id to grant a
+            // paid entitlement to any organization.
+            if ($entitlement && $entitlement->klea_subscription_id !== null) {
+                $incomingSubscriptionId = (int) ($payload['subscription_id'] ?? 0);
+                if ($incomingSubscriptionId !== (int) $entitlement->klea_subscription_id) {
+                    Log::warning('Klea webhook: subscription_id mismatch for organization', [
+                        'organization_id' => $organization->id,
+                        'expected_subscription_id' => (int) $entitlement->klea_subscription_id,
+                        'incoming_subscription_id' => $incomingSubscriptionId,
+                    ]);
+
+                    return response()->json(['success' => false, 'message' => 'Subscription mismatch'], 422);
+                }
+            }
+
+            // Reject replays of an already-processed transaction.
+            $incomingTransactionId = (int) ($payload['transaction']['id'] ?? 0);
+            if ($entitlement && $entitlement->last_transaction_id !== null
+                && (int) $entitlement->last_transaction_id === $incomingTransactionId) {
+                Log::warning('Klea webhook: duplicate transaction replay ignored', [
+                    'organization_id' => $organization->id,
+                    'transaction_id' => $incomingTransactionId,
+                ]);
+
+                return response()->json(['success' => true, 'message' => 'Webhook already processed'], 200);
+            }
+
             $planId = $payload['plan_id'] ?? null;
             $planName = null;
             $durationDays = 30; // safe fallback if the plan can't be resolved from the cached list
@@ -74,6 +105,7 @@ class KleaWebhookController extends Controller
                     'starts_at' => now(),
                     'expires_at' => now()->addDays($durationDays),
                     'last_webhook_at' => now(),
+                    'last_transaction_id' => $incomingTransactionId,
                 ]
             );
         } elseif ($status === 'failed') {

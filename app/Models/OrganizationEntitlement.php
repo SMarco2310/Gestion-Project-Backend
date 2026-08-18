@@ -19,6 +19,7 @@ class OrganizationEntitlement extends Model
         'starts_at',
         'expires_at',
         'last_webhook_at',
+        'last_transaction_id',
     ];
 
     protected $casts = [

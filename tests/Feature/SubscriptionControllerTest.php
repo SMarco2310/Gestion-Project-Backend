@@ -74,6 +74,45 @@ class SubscriptionControllerTest extends TestCase
         ]);
     }
 
+    public function test_subscribing_with_an_active_entitlement_does_not_downgrade_it()
+    {
+        Http::fake([
+            '*/public/subscribe' => Http::response([
+                'data' => ['subscription_id' => 77, 'transaction_id' => 200, 'amount' => 15000, 'currency' => 'XOF', 'payment_url' => 'https://pay.example/renew', 'qrcode_url' => null],
+                'success' => true, 'message' => 'ok',
+            ], 201),
+        ]);
+
+        $org = Organization::factory()->create();
+        $owner = User::factory()->create();
+        $org->users()->attach($owner->id, ['role' => 'proprietaire']);
+
+        OrganizationEntitlement::create([
+            'organization_id' => $org->id,
+            'klea_subscription_id' => 55,
+            'status' => 'active',
+            'plan_name' => 'Pro',
+            'expires_at' => now()->addDays(10),
+        ]);
+
+        $response = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/subscribe", [
+            'plan_id' => 2,
+            'phone_number' => '+22500000000',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.payment_url', 'https://pay.example/renew');
+
+        // The pre-existing active entitlement must not be downgraded to 'pending'
+        // just because a renewal/upgrade attempt was recorded, but the new
+        // subscription id must be tracked so the webhook can validate it.
+        $this->assertDatabaseHas('organization_entitlements', [
+            'organization_id' => $org->id,
+            'status' => 'active',
+            'klea_subscription_id' => 77,
+        ]);
+    }
+
     public function test_entitlement_endpoint_returns_current_status_and_usage()
     {
         $org = Organization::factory()->create();
