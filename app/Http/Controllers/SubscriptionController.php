@@ -39,19 +39,47 @@ class SubscriptionController extends Controller
         }
     }
 
+    /**
+     * Payment channels available for checkout. Public like plans(): the
+     * checkout page needs it before any organization context exists.
+     */
+    public function gateways()
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'message' => 'Gateways retrieved successfully',
+                'data' => $this->klea->listGateways(),
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching Klea gateways: ' . $e->getMessage());
+
+            // Non-fatal: the checkout page falls back to letting the customer
+            // choose on the hosted payment page.
+            return response()->json([
+                'success' => true,
+                'message' => 'Gateways unavailable',
+                'live' => false,
+                'data' => [],
+            ], 200);
+        }
+    }
+
     public function subscribe(Request $request, Organization $organization)
     {
         try {
             $request->validate([
                 'plan_id' => 'required|integer',
-                'phone_number' => 'required|string',
+                'phone_number' => 'sometimes|nullable|string',
+                'gateway_id' => 'sometimes|nullable|integer',
             ]);
 
             $result = $this->klea->subscribe(
                 $organization,
                 (int) $request->plan_id,
                 $request->user(),
-                $request->phone_number
+                $request->phone_number,
+                $request->gateway_id ? (int) $request->gateway_id : null
             );
 
             $entitlement = OrganizationEntitlement::firstOrNew(['organization_id' => $organization->id]);
@@ -59,9 +87,15 @@ class SubscriptionController extends Controller
             $entitlement->klea_subscription_id = $result['subscription_id'];
             $entitlement->klea_plan_id = (int) $request->plan_id;
 
-            // Only claim 'pending' when there is no live entitlement to protect — a renewal
-            // or upgrade must not revoke the current plan before the new payment settles.
-            if (! $entitlement->exists || ! $entitlement->isActive()) {
+            // Klea activates a zero-price plan on the spot and returns no
+            // payment_url, so there is no webhook coming to flip this later.
+            // Leaving it 'pending' would strand the customer on a plan they
+            // already hold.
+            if (($result['status'] ?? null) === 'active') {
+                $entitlement->status = 'active';
+            } elseif (! $entitlement->exists || ! $entitlement->isActive()) {
+                // Only claim 'pending' when there is no live entitlement to protect — a renewal
+                // or upgrade must not revoke the current plan before the new payment settles.
                 $entitlement->status = 'pending';
             }
 
