@@ -26,7 +26,11 @@ class KleaClientService
      */
     public function listPlans(): Collection
     {
-        return Cache::remember('klea.plans', now()->addMinutes(5), function () {
+        // Cache the raw array, not a Collection: serializing cache stores
+        // (database, redis, file) hand back __PHP_Incomplete_Class on a cache
+        // hit rather than a real Collection, which then fails this method's
+        // return type. Only the array-store used in tests survives that.
+        $plans = Cache::remember('klea.plans', now()->addMinutes(5), function () {
             $response = Http::withToken($this->apiKey)
                 ->get("{$this->baseUrl}/public/plans");
 
@@ -34,23 +38,50 @@ class KleaClientService
                 throw new \RuntimeException('Klea listPlans failed: ' . $response->body());
             }
 
-            return collect($response->json('data', []));
+            return $response->json('data', []);
         });
+
+        return collect($plans);
+    }
+
+    /**
+     * Payment channels the subscriber can choose from before checkout.
+     * Cached briefly: the list changes rarely and every checkout view hits it.
+     */
+    public function listGateways(): Collection
+    {
+        // Cache the raw array, not a Collection — serializing cache stores hand
+        // back __PHP_Incomplete_Class on a hit, which would break the return type.
+        $gateways = Cache::remember('klea.gateways', now()->addMinutes(10), function () {
+            $response = Http::withToken($this->apiKey)
+                ->get("{$this->baseUrl}/public/gateways");
+
+            if (! $response->successful()) {
+                throw new \RuntimeException('Klea listGateways failed: ' . $response->body());
+            }
+
+            return $response->json('data', []);
+        });
+
+        return collect($gateways);
     }
 
     /**
      * external_id is always the organization's own UUID — this is how Klea's
      * webhook later tells us which organization a payment result belongs to.
      */
-    public function subscribe(Organization $organization, int $planId, User $actingUser, string $phoneNumber): array
+    public function subscribe(Organization $organization, int $planId, User $actingUser, ?string $phoneNumber, ?int $gatewayId = null): array
     {
         $response = Http::withToken($this->apiKey)
             ->post("{$this->baseUrl}/public/subscribe", [
                 'plan_id' => $planId,
                 'external_id' => $organization->id,
                 'email' => $actingUser->email,
-                'phone_number' => $phoneNumber,
+                ...($phoneNumber !== null && $phoneNumber !== '' ? ['phone_number' => $phoneNumber] : []),
                 'environment' => 'live',
+                // Preselected payment channel (CashPay gateway id). Optional —
+                // without it the subscriber picks on the hosted page.
+                ...($gatewayId ? ['gateway_id' => $gatewayId] : []),
             ]);
 
         if (! $response->successful()) {

@@ -224,13 +224,39 @@ class ProjetController extends Controller
             Gate::authorize('update', $projet);
 
             $request->validate([
-                'file' => 'required|file|max:10240', // 10MB max
+                'file' => 'required|file|max:10240', // 10MB absolute ceiling
             ]);
 
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
+                $organization = $projet->organization ?? \App\Models\Organization::find($projet->organization_id);
+                $gate = app(\App\Services\FeatureGate::class);
+
+                $sizeLimitMb = $gate->limit($organization, 'max_attachment_size_mb');
+                if ($sizeLimitMb !== null && $file->getSize() > $sizeLimitMb * 1024 * 1024) {
+                    return response()->json([
+                        'success' => false,
+                        'upgrade_required' => true,
+                        'feature' => 'max_attachment_size_mb',
+                        'message' => 'This file exceeds the attachment size limit for your current plan.',
+                    ], 422);
+                }
+
+                $storageLimitMb = $gate->limit($organization, 'max_storage_mb');
+                if ($storageLimitMb !== null) {
+                    $currentBytes = $gate->storageUsedBytes($organization);
+                    if ($currentBytes + $file->getSize() > $storageLimitMb * 1024 * 1024) {
+                        return response()->json([
+                            'success' => false,
+                            'upgrade_required' => true,
+                            'feature' => 'max_storage_mb',
+                            'message' => 'This upload would exceed the storage limit for your current plan.',
+                        ], 422);
+                    }
+                }
+
                 $path = $file->store('attachments', 'public');
-                
+
                 $attachment = $projet->attachments()->create([
                     'user_id' => $request->user()->id,
                     'file_name' => $file->getClientOriginalName(),

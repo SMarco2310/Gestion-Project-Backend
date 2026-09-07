@@ -33,6 +33,7 @@ Route::post('/auth/custom/link-account', [OAuthController::class, 'linkAccount']
 
 // Public plan catalog (pricing page)
 Route::get('/public-plans', [SubscriptionController::class, 'plans']);
+Route::get('/public-gateways', [SubscriptionController::class, 'gateways']);
 
 // Klea payment webhook (public — caller is Klea's server, signature-verified inside)
 Route::post('/webhooks/klea', [KleaWebhookController::class, 'handle']);
@@ -63,6 +64,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Organizations and Teams
     Route::apiResource('organizations', OrganizationController::class)->only(['index', 'store']);
+    // Deliberately NOT gated behind feature:custom_branding — uploading an org
+    // logo is basic setup that happens during organization creation, so gating
+    // it 403s every Free-tier signup. custom_branding is meant for premium
+    // theming (custom colours/domains), not the org's own avatar.
     Route::post('organizations/{organization}/logo', [OrganizationController::class, 'uploadLogo'])->middleware('organization.role:proprietaire,admin');
     Route::apiResource('organizations', OrganizationController::class)->only(['show'])->middleware('organization.role:proprietaire,admin,membre');
     Route::apiResource('organizations', OrganizationController::class)->only(['update', 'destroy'])->middleware('organization.role:proprietaire,admin');

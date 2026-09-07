@@ -57,6 +57,28 @@ class InvitationController extends Controller
                 ], 422);
             }
 
+            // Enforce max_members: current members + already-pending invitations
+            // (accepting all pending invites must not be able to overshoot the limit)
+            $organization = Organization::findOrFail($validated['organization_id']);
+            $gate = app(\App\Services\FeatureGate::class);
+            $limit = $gate->limit($organization, 'max_members');
+
+            if ($limit !== null) {
+                $currentMembers = $organization->users()->count();
+                $pendingInvitations = Invitation::where('organization_id', $organization->id)
+                    ->where('status', 'pending')
+                    ->count();
+
+                if ($currentMembers + $pendingInvitations >= $limit) {
+                    return response()->json([
+                        'success' => false,
+                        'upgrade_required' => true,
+                        'feature' => 'max_members',
+                        'message' => 'Member limit reached for your current plan.',
+                    ], 422);
+                }
+            }
+
             // Generate token and set expiration to 2 days
             $token = Str::random(40);
             $expiresAt = now()->addDays(2);
@@ -180,11 +202,26 @@ class InvitationController extends Controller
 
             // Add to organization
             if (!$user->organizations()->where('organization_id', $invitation->organization_id)->exists()) {
+                // Re-check max_members: the limit may have been lowered, or other
+                // invites accepted, between when this invitation was sent and now.
+                $organization = Organization::findOrFail($invitation->organization_id);
+                $gate = app(\App\Services\FeatureGate::class);
+                $limit = $gate->limit($organization, 'max_members');
+
+                if ($limit !== null && $organization->users()->count() >= $limit) {
+                    return response()->json([
+                        'success' => false,
+                        'upgrade_required' => true,
+                        'feature' => 'max_members',
+                        'message' => 'Member limit reached for your current plan.',
+                    ], 422);
+                }
+
                 $orgRole = $invitation->role === 'admin' ? 'admin' : 'membre';
                 if ($invitation->role === 'owner') {
                     $orgRole = 'proprietaire';
                 }
-                
+
                 $user->organizations()->attach($invitation->organization_id, [
                     'role' => $orgRole,
                     'joined_at' => now(),

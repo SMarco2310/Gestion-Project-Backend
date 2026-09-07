@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Attachment;
 use App\Models\Organization;
 use App\Models\OrganizationEntitlement;
 
@@ -48,6 +49,24 @@ class FeatureGate
         }
 
         return (bool) config("entitlements.free.{$code}", false);
+    }
+
+    /**
+     * Total bytes currently stored in attachments belonging to $organization,
+     * whether attached directly to a projet or to a tache within one of the
+     * organization's projets. Used to enforce max_storage_mb.
+     */
+    public function storageUsedBytes(Organization $organization): int
+    {
+        $direct = (int) Attachment::whereHas('projet', function ($q) use ($organization) {
+            $q->where('organization_id', $organization->id);
+        })->sum('size');
+
+        $viaTache = (int) Attachment::whereHas('tache.projet', function ($q) use ($organization) {
+            $q->where('organization_id', $organization->id);
+        })->sum('size');
+
+        return $direct + $viaTache;
     }
 
     protected function activeEntitlement(Organization $organization): ?OrganizationEntitlement

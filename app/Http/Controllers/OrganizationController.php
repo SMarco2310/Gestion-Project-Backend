@@ -41,6 +41,18 @@ class OrganizationController extends Controller
     public function store(Request $request)
     {
         try {
+            // One organization per user: billing and plan entitlements are
+            // scoped to an organization, so a second one would mean a second
+            // subscription with no way to choose between them. Existing
+            // multi-org accounts predate this rule and are left untouched —
+            // this only blocks creating new ones.
+            if ($request->user()->organizations()->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vous avez déjà une organisation. Créez plutôt un nouvel espace de travail.',
+                ], 409);
+            }
+
             $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
